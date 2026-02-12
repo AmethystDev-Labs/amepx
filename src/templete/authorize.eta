@@ -1,0 +1,190 @@
+<%
+  const CODE = it.CODE ?? it.code ?? "------";
+  const CLIENTNAME = it.CLIENTNAME ?? it.clientName ?? "Unknown App";
+  const CLIENTPICTURE = it.CLIENTPICTURE ?? it.clientPicture ?? "https://placehold.co/96x96/png";
+  const CLIENT_DESCRIPTION =
+    it.CLIENT_DESCRIPTION ?? it.CLIENTDESCRIPTION ?? it.clientDescription ?? "No description";
+  const GROUP_ID = it.GROUP_ID ?? it.GROUPID ?? it.groupId ?? "000000";
+  const REQUEST_ID = it.REQUEST_ID ?? it.requestId ?? "";
+%>
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OAuth2 授权</title>
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js"></script>
+    <script>
+      function authorizePage() {
+        const requestId = "<%= REQUEST_ID %>";
+
+        return {
+          finished: false,
+          checking: false,
+          statusText: "",
+          async finish() {
+            if (this.checking || this.finished) return;
+            this.checking = true;
+            this.statusText = "正在校验群消息...";
+
+            try {
+              const response = await fetch("/api/onebot/check", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ request_id: requestId }),
+              });
+              const data = await response.json();
+
+              if (data.done) {
+                this.finished = true;
+                this.statusText = data.message || "已完成校验";
+              } else {
+                this.statusText = data.message || "未找到代码，请发送后重试";
+              }
+            } catch (_) {
+              this.statusText = "校验失败，请稍后重试";
+            } finally {
+              this.checking = false;
+            }
+          },
+        };
+      }
+    </script>
+    <style>
+      :root {
+        color-scheme: only light;
+        --bg: #ffffff;
+        --text: #000000;
+        --line: #000000;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif;
+        font-weight: 300;
+        color: var(--text);
+        background: var(--bg);
+        display: grid;
+        place-items: center;
+        padding: 20px;
+      }
+      .wrap {
+        width: min(620px, 100%);
+      }
+      .app {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .avatar {
+        width: 44px;
+        height: 44px;
+        border-radius: 999px;
+        object-fit: cover;
+        border: 1px solid var(--line);
+      }
+      .name {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 300;
+        letter-spacing: 0.01em;
+      }
+      .desc {
+        margin: 2px 0 0;
+        font-size: 14px;
+        opacity: 0.65;
+      }
+      .claim {
+        margin: 42px 0 14px;
+        font-size: 21px;
+        font-weight: 300;
+      }
+      .line {
+        border: 0;
+        border-top: 1px solid var(--line);
+        margin: 12px 0;
+      }
+      .code {
+        margin: 0;
+        text-align: center;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+        letter-spacing: 0.22em;
+        font-size: clamp(30px, 10vw, 48px);
+        font-weight: 300;
+      }
+      .tip {
+        margin: 20px 0 26px;
+        line-height: 1.75;
+        opacity: 0.72;
+      }
+      .group {
+        font-weight: 400;
+        color: var(--text);
+        letter-spacing: 0.02em;
+      }
+      .finish {
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 10px 30px;
+        font-size: 18px;
+        font-weight: 300;
+        letter-spacing: 0.02em;
+        color: var(--text);
+        background: #fff;
+        cursor: pointer;
+        transition: background 0.12s ease, color 0.12s ease;
+      }
+      .finish:hover {
+        background: #000;
+        color: #fff;
+      }
+      .finish:disabled {
+        cursor: not-allowed;
+        opacity: 0.5;
+      }
+      .done {
+        margin: 14px 0 0;
+        font-size: 14px;
+        opacity: 0.7;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="wrap" x-data="authorizePage()">
+      <section class="app">
+        <img class="avatar" src="<%= CLIENTPICTURE %>" alt="<%= CLIENTNAME %> logo" />
+        <div>
+          <h1 class="name"><%= CLIENTNAME %></h1>
+          <p class="desc"><%= CLIENT_DESCRIPTION %></p>
+        </div>
+      </section>
+
+      <p class="claim">申请获取你的信息</p>
+      <hr class="line" />
+      <p class="code"><%= CODE %></p>
+      <hr class="line" />
+
+      <p class="tip">
+        请将代码发送到 <span class="group"><%= GROUP_ID %></span> 群中，完成后点击下方按钮
+      </p>
+
+      <button
+        class="finish"
+        type="button"
+        x-on:click="finish()"
+        :disabled="finished || checking"
+      >
+        <span x-show="!finished && !checking">Finish</span>
+        <span x-show="checking">Checking...</span>
+        <span x-show="finished">Finished</span>
+      </button>
+
+      <p class="done" x-show="finished">已标记完成，你可以关闭当前页面。</p>
+      <p class="done" x-show="statusText" x-text="statusText"></p>
+    </main>
+  </body>
+</html>

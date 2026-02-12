@@ -1,0 +1,638 @@
+diff --git a/dist/cjs/index.js b/dist/cjs/index.js
+index 100108b61010b1b6e75ff69ec4c6031334cffbd8..2dde045828beeb79c0b8948c92b6ebffbcdd4af0 100644
+--- a/dist/cjs/index.js
++++ b/dist/cjs/index.js
+@@ -2901,6 +2901,63 @@ var mergeResponseSchema = (_existing, _incoming, vendors) => {
+   }
+   return schema;
+ };
++var mergeContent = (base, extra) => {
++  if (!extra) return base;
++  if (!base) return extra;
++  const merged = { ...base };
++  for (const [media, value] of Object.entries(extra)) {
++    if (!merged[media]) {
++      merged[media] = value;
++      continue;
++    }
++    const current = merged[media];
++    if (current && typeof current === "object" && value && typeof value === "object") {
++      merged[media] = { ...current, ...value };
++    } else {
++      merged[media] = value;
++    }
++  }
++  return merged;
++};
++var mergeRequestBodyExtras = (base, extra) => {
++  if (!extra) return base;
++  const merged = {
++    ...base
++  };
++  if (typeof extra.description === "string") merged.description = extra.description;
++  if (typeof extra.required === "boolean") merged.required = extra.required;
++  if (extra.content) merged.content = mergeContent(merged.content, extra.content);
++  return merged;
++};
++var mergeResponseExtras = (base, extra) => {
++  if (!extra) return base;
++  const merged = {
++    ...base
++  };
++  if (typeof extra.description === "string") merged.description = extra.description;
++  if (extra.headers)
++    merged.headers = {
++      ...merged.headers,
++      ...extra.headers
++    };
++  if (extra.content) merged.content = mergeContent(merged.content, extra.content);
++  return merged;
++};
++var normalizeResponseHeaders = (headers, vendors) => {
++  if (!headers || typeof headers !== "object") return headers;
++  const normalized = {};
++  for (const [name, header] of Object.entries(headers)) {
++    if (!header) continue;
++    if (header.schema || header.content) {
++      normalized[name] = header;
++      continue;
++    }
++    const schema = unwrapSchema(header, vendors, "output") ?? header;
++    const description = header.description;
++    normalized[name] = description ? { schema, description } : { schema };
++  }
++  return normalized;
++};
+ var mergeStandaloneValidators = (hooks, vendors) => {
+   const merged = { ...hooks };
+   if (!hooks.standaloneValidator?.length) return merged;
+@@ -3277,6 +3334,7 @@ function toOpenAPISchema(app, exclude, references, vendors) {
+             }
+           };
+         }
++        operation.requestBody = mergeRequestBodyExtras(operation.requestBody, options);
+       }
+     }
+     if (hooks.response) {
+@@ -3287,7 +3345,8 @@ function toOpenAPISchema(app, exclude, references, vendors) {
+           const response = unwrapSchema(schema, vendors, "output");
+           if (!response) continue;
+           const { type, description, $ref, ..._options } = unwrapReference(response, definitions);
+-          operation.responses[status] = {
++          const responseOptions = _options.headers ? { ..._options, headers: normalizeResponseHeaders(_options.headers, vendors) } : _options;
++          const baseResponse = {
+             description: description ?? `Response for status ${status}`,
+             content: type === "void" || type === "null" || type === "undefined" ? { type, description } : type === "string" || type === "number" || type === "integer" || type === "boolean" ? {
+               "text/plain": {
+@@ -3299,6 +3358,7 @@ function toOpenAPISchema(app, exclude, references, vendors) {
+               }
+             }
+           };
++          operation.responses[status] = mergeResponseExtras(baseResponse, responseOptions);
+         }
+       } else {
+         const response = unwrapSchema(
+@@ -3312,8 +3372,9 @@ function toOpenAPISchema(app, exclude, references, vendors) {
+             description,
+             ...options
+           } = unwrapReference(response, definitions);
++          const responseOptions = options.headers ? { ...options, headers: normalizeResponseHeaders(options.headers, vendors) } : options;
+           const type = _type;
+-          operation.responses["200"] = {
++          const baseResponse = {
+             description: description ?? `Response for status 200`,
+             content: type === "void" || type === "null" || type === "undefined" ? { type, description } : type === "string" || type === "number" || type === "integer" || type === "boolean" ? {
+               "text/plain": {
+@@ -3325,6 +3386,7 @@ function toOpenAPISchema(app, exclude, references, vendors) {
+               }
+             }
+           };
++          operation.responses["200"] = mergeResponseExtras(baseResponse, responseOptions);
+         }
+       }
+     }
+@@ -3372,6 +3434,31 @@ function toOpenAPISchema(app, exclude, references, vendors) {
+ var withHeaders = (schema, headers) => Object.assign(schema, {
+   headers
+ });
++var deepClone = (value, seen = /* @__PURE__ */ new WeakMap()) => {
++  if (value === null || typeof value !== "object") return value;
++  if (seen.has(value)) return seen.get(value);
++  if (Array.isArray(value)) {
++    const copy = [];
++    seen.set(value, copy);
++    for (const item of value)
++      copy.push(deepClone(item, seen));
++    return copy;
++  }
++  const proto = Object.getPrototypeOf(value);
++  const copy = Object.create(proto);
++  seen.set(value, copy);
++  for (const key of Reflect.ownKeys(value))
++    copy[key] = deepClone(value[key], seen);
++  return copy;
++};
++var withDoc = (schema, options = {}) => {
++  const base = deepClone(schema);
++  if (options.description)
++    base.description = options.description;
++  if (options.content)
++    base.content = options.content;
++  return options.headers ? withHeaders(base, options.headers) : base;
++};
+ 
+ // node_modules/@sinclair/typebox/build/esm/parser/runtime/index.mjs
+ var runtime_exports = {};
+@@ -10298,5 +10385,6 @@ var index_default = openapi;
+   fromTypes,
+   openapi,
+   toOpenAPISchema,
++  withDoc,
+   withHeaders
+ });
+diff --git a/dist/cjs/openapi.js b/dist/cjs/openapi.js
+index ab010b04edcc9c05c1d34112d304923847a23384..c71a6c8a169057d0f98ed75402c890dad8ee0443 100644
+--- a/dist/cjs/openapi.js
++++ b/dist/cjs/openapi.js
+@@ -241,6 +241,63 @@ var mergeResponseSchema = (_existing, _incoming, vendors) => {
+   }
+   return schema;
+ };
++var mergeContent = (base, extra) => {
++  if (!extra) return base;
++  if (!base) return extra;
++  const merged = { ...base };
++  for (const [media, value] of Object.entries(extra)) {
++    if (!merged[media]) {
++      merged[media] = value;
++      continue;
++    }
++    const current = merged[media];
++    if (current && typeof current === "object" && value && typeof value === "object") {
++      merged[media] = { ...current, ...value };
++    } else {
++      merged[media] = value;
++    }
++  }
++  return merged;
++};
++var mergeRequestBodyExtras = (base, extra) => {
++  if (!extra) return base;
++  const merged = {
++    ...base
++  };
++  if (typeof extra.description === "string") merged.description = extra.description;
++  if (typeof extra.required === "boolean") merged.required = extra.required;
++  if (extra.content) merged.content = mergeContent(merged.content, extra.content);
++  return merged;
++};
++var mergeResponseExtras = (base, extra) => {
++  if (!extra) return base;
++  const merged = {
++    ...base
++  };
++  if (typeof extra.description === "string") merged.description = extra.description;
++  if (extra.headers)
++    merged.headers = {
++      ...merged.headers,
++      ...extra.headers
++    };
++  if (extra.content) merged.content = mergeContent(merged.content, extra.content);
++  return merged;
++};
++var normalizeResponseHeaders = (headers, vendors) => {
++  if (!headers || typeof headers !== "object") return headers;
++  const normalized = {};
++  for (const [name, header] of Object.entries(headers)) {
++    if (!header) continue;
++    if (header.schema || header.content) {
++      normalized[name] = header;
++      continue;
++    }
++    const schema = unwrapSchema(header, vendors, "output") ?? header;
++    const description = header.description;
++    normalized[name] = description ? { schema, description } : { schema };
++  }
++  return normalized;
++};
+ var mergeStandaloneValidators = (hooks, vendors) => {
+   const merged = { ...hooks };
+   if (!hooks.standaloneValidator?.length) return merged;
+@@ -617,6 +674,7 @@ function toOpenAPISchema(app, exclude, references, vendors) {
+             }
+           };
+         }
++        operation.requestBody = mergeRequestBodyExtras(operation.requestBody, options);
+       }
+     }
+     if (hooks.response) {
+@@ -627,7 +685,8 @@ function toOpenAPISchema(app, exclude, references, vendors) {
+           const response = unwrapSchema(schema, vendors, "output");
+           if (!response) continue;
+           const { type, description, $ref, ..._options } = unwrapReference(response, definitions);
+-          operation.responses[status] = {
++          const responseOptions = _options.headers ? { ..._options, headers: normalizeResponseHeaders(_options.headers, vendors) } : _options;
++          const baseResponse = {
+             description: description ?? `Response for status ${status}`,
+             content: type === "void" || type === "null" || type === "undefined" ? { type, description } : type === "string" || type === "number" || type === "integer" || type === "boolean" ? {
+               "text/plain": {
+@@ -639,6 +698,7 @@ function toOpenAPISchema(app, exclude, references, vendors) {
+               }
+             }
+           };
++          operation.responses[status] = mergeResponseExtras(baseResponse, responseOptions);
+         }
+       } else {
+         const response = unwrapSchema(
+@@ -652,8 +712,9 @@ function toOpenAPISchema(app, exclude, references, vendors) {
+             description,
+             ...options
+           } = unwrapReference(response, definitions);
++          const responseOptions = options.headers ? { ...options, headers: normalizeResponseHeaders(options.headers, vendors) } : options;
+           const type = _type;
+-          operation.responses["200"] = {
++          const baseResponse = {
+             description: description ?? `Response for status 200`,
+             content: type === "void" || type === "null" || type === "undefined" ? { type, description } : type === "string" || type === "number" || type === "integer" || type === "boolean" ? {
+               "text/plain": {
+@@ -665,6 +726,7 @@ function toOpenAPISchema(app, exclude, references, vendors) {
+               }
+             }
+           };
++          operation.responses["200"] = mergeResponseExtras(baseResponse, responseOptions);
+         }
+       }
+     }
+@@ -712,6 +774,31 @@ function toOpenAPISchema(app, exclude, references, vendors) {
+ var withHeaders = (schema, headers) => Object.assign(schema, {
+   headers
+ });
++var deepClone = (value, seen = /* @__PURE__ */ new WeakMap()) => {
++  if (value === null || typeof value !== "object") return value;
++  if (seen.has(value)) return seen.get(value);
++  if (Array.isArray(value)) {
++    const copy = [];
++    seen.set(value, copy);
++    for (const item of value)
++      copy.push(deepClone(item, seen));
++    return copy;
++  }
++  const proto = Object.getPrototypeOf(value);
++  const copy = Object.create(proto);
++  seen.set(value, copy);
++  for (const key of Reflect.ownKeys(value))
++    copy[key] = deepClone(value[key], seen);
++  return copy;
++};
++var withDoc = (schema, options = {}) => {
++  const base = deepClone(schema);
++  if (options.description)
++    base.description = options.description;
++  if (options.content)
++    base.content = options.content;
++  return options.headers ? withHeaders(base, options.headers) : base;
++};
+ // Annotate the CommonJS export names for ESM import in node:
+ 0 && (module.exports = {
+   capitalize,
+@@ -720,5 +807,6 @@ var withHeaders = (schema, headers) => Object.assign(schema, {
+   getPossiblePath,
+   toOpenAPISchema,
+   unwrapSchema,
++  withDoc,
+   withHeaders
+ });
+diff --git a/dist/index.d.ts b/dist/index.d.ts
+index 9c54cfd9984e5444140b29421adee68b2f09773e..bdee1ae1b66fcf9da66ab81f7e4bcd9f8e8becb5 100644
+--- a/dist/index.d.ts
++++ b/dist/index.d.ts
+@@ -34,6 +34,6 @@ export declare const openapi: <const Enabled extends boolean = true, const Path
+     response: {};
+ }>;
+ export { fromTypes } from './gen';
+-export { toOpenAPISchema, withHeaders } from './openapi';
++export { toOpenAPISchema, withDoc, withHeaders } from './openapi';
+ export type { ElysiaOpenAPIConfig };
+ export default openapi;
+diff --git a/dist/index.mjs b/dist/index.mjs
+index 7926f4c7643092f17ae64fab19a04108b84e5cc2..64fcb7629343734db21c8878be5bf4c0377d690c 100644
+--- a/dist/index.mjs
++++ b/dist/index.mjs
+@@ -2879,6 +2879,63 @@ var mergeResponseSchema = (_existing, _incoming, vendors) => {
+   }
+   return schema;
+ };
++var mergeContent = (base, extra) => {
++  if (!extra) return base;
++  if (!base) return extra;
++  const merged = { ...base };
++  for (const [media, value] of Object.entries(extra)) {
++    if (!merged[media]) {
++      merged[media] = value;
++      continue;
++    }
++    const current = merged[media];
++    if (current && typeof current === "object" && value && typeof value === "object") {
++      merged[media] = { ...current, ...value };
++    } else {
++      merged[media] = value;
++    }
++  }
++  return merged;
++};
++var mergeRequestBodyExtras = (base, extra) => {
++  if (!extra) return base;
++  const merged = {
++    ...base
++  };
++  if (typeof extra.description === "string") merged.description = extra.description;
++  if (typeof extra.required === "boolean") merged.required = extra.required;
++  if (extra.content) merged.content = mergeContent(merged.content, extra.content);
++  return merged;
++};
++var mergeResponseExtras = (base, extra) => {
++  if (!extra) return base;
++  const merged = {
++    ...base
++  };
++  if (typeof extra.description === "string") merged.description = extra.description;
++  if (extra.headers)
++    merged.headers = {
++      ...merged.headers,
++      ...extra.headers
++    };
++  if (extra.content) merged.content = mergeContent(merged.content, extra.content);
++  return merged;
++};
++var normalizeResponseHeaders = (headers, vendors) => {
++  if (!headers || typeof headers !== "object") return headers;
++  const normalized = {};
++  for (const [name, header] of Object.entries(headers)) {
++    if (!header) continue;
++    if (header.schema || header.content) {
++      normalized[name] = header;
++      continue;
++    }
++    const schema = unwrapSchema(header, vendors, "output") ?? header;
++    const description = header.description;
++    normalized[name] = description ? { schema, description } : { schema };
++  }
++  return normalized;
++};
+ var mergeStandaloneValidators = (hooks, vendors) => {
+   const merged = { ...hooks };
+   if (!hooks.standaloneValidator?.length) return merged;
+@@ -3255,6 +3312,7 @@ function toOpenAPISchema(app, exclude, references, vendors) {
+             }
+           };
+         }
++        operation.requestBody = mergeRequestBodyExtras(operation.requestBody, options);
+       }
+     }
+     if (hooks.response) {
+@@ -3265,7 +3323,8 @@ function toOpenAPISchema(app, exclude, references, vendors) {
+           const response = unwrapSchema(schema, vendors, "output");
+           if (!response) continue;
+           const { type, description, $ref, ..._options } = unwrapReference(response, definitions);
+-          operation.responses[status] = {
++          const responseOptions = _options.headers ? { ..._options, headers: normalizeResponseHeaders(_options.headers, vendors) } : _options;
++          const baseResponse = {
+             description: description ?? `Response for status ${status}`,
+             content: type === "void" || type === "null" || type === "undefined" ? { type, description } : type === "string" || type === "number" || type === "integer" || type === "boolean" ? {
+               "text/plain": {
+@@ -3277,6 +3336,7 @@ function toOpenAPISchema(app, exclude, references, vendors) {
+               }
+             }
+           };
++          operation.responses[status] = mergeResponseExtras(baseResponse, responseOptions);
+         }
+       } else {
+         const response = unwrapSchema(
+@@ -3290,8 +3350,9 @@ function toOpenAPISchema(app, exclude, references, vendors) {
+             description,
+             ...options
+           } = unwrapReference(response, definitions);
++          const responseOptions = options.headers ? { ...options, headers: normalizeResponseHeaders(options.headers, vendors) } : options;
+           const type = _type;
+-          operation.responses["200"] = {
++          const baseResponse = {
+             description: description ?? `Response for status 200`,
+             content: type === "void" || type === "null" || type === "undefined" ? { type, description } : type === "string" || type === "number" || type === "integer" || type === "boolean" ? {
+               "text/plain": {
+@@ -3303,6 +3364,7 @@ function toOpenAPISchema(app, exclude, references, vendors) {
+               }
+             }
+           };
++          operation.responses["200"] = mergeResponseExtras(baseResponse, responseOptions);
+         }
+       }
+     }
+@@ -3350,6 +3412,31 @@ function toOpenAPISchema(app, exclude, references, vendors) {
+ var withHeaders = (schema, headers) => Object.assign(schema, {
+   headers
+ });
++var deepClone = (value, seen = /* @__PURE__ */ new WeakMap()) => {
++  if (value === null || typeof value !== "object") return value;
++  if (seen.has(value)) return seen.get(value);
++  if (Array.isArray(value)) {
++    const copy = [];
++    seen.set(value, copy);
++    for (const item of value)
++      copy.push(deepClone(item, seen));
++    return copy;
++  }
++  const proto = Object.getPrototypeOf(value);
++  const copy = Object.create(proto);
++  seen.set(value, copy);
++  for (const key of Reflect.ownKeys(value))
++    copy[key] = deepClone(value[key], seen);
++  return copy;
++};
++var withDoc = (schema, options = {}) => {
++  const base = deepClone(schema);
++  if (options.description)
++    base.description = options.description;
++  if (options.content)
++    base.content = options.content;
++  return options.headers ? withHeaders(base, options.headers) : base;
++};
+ 
+ // node_modules/@sinclair/typebox/build/esm/parser/runtime/index.mjs
+ var runtime_exports = {};
+@@ -10276,5 +10363,6 @@ export {
+   fromTypes,
+   openapi,
+   toOpenAPISchema,
++  withDoc,
+   withHeaders
+ };
+diff --git a/dist/openapi.d.ts b/dist/openapi.d.ts
+index beaf19059343c6f7138cde0c384c1e8a6299c9a7..28e69cae12215934ba2968fb4c397180f83e852f 100644
+--- a/dist/openapi.d.ts
++++ b/dist/openapi.d.ts
+@@ -28,6 +28,11 @@ export declare function toOpenAPISchema(app: AnyElysia, exclude?: ElysiaOpenAPIC
+     };
+     paths: OpenAPIV3.PathsObject<{}, {}>;
+ };
+-export declare const withHeaders: (schema: TSchema, headers: TProperties) => TSchema & {
+-    headers: TProperties;
++type OpenApiDocOptions = {
++    description?: string;
++    content?: Record<string, {
++        schema: unknown;
++    }>;
++    headers?: Record<string, TSchema>;
+ };
++export declare const withDoc: <T extends TSchema>(schema: T, options?: OpenApiDocOptions) => T;
+diff --git a/dist/openapi.mjs b/dist/openapi.mjs
+index 9529f0d1cb4653a28194c34c5b5d86a0c909219a..4727c21c4fc76c9e1144e344d36ef0c223e88313 100644
+--- a/dist/openapi.mjs
++++ b/dist/openapi.mjs
+@@ -358,6 +358,63 @@ var unwrapSchema = (schema, mapJsonSchema, io = "input") => {
+     console.warn(error);
+   }
+ };
++var mergeContent = (base, extra) => {
++  if (!extra) return base;
++  if (!base) return extra;
++  const merged = { ...base };
++  for (const [media, value] of Object.entries(extra)) {
++    if (!merged[media]) {
++      merged[media] = value;
++      continue;
++    }
++    const current = merged[media];
++    if (current && typeof current === "object" && value && typeof value === "object") {
++      merged[media] = { ...current, ...value };
++    } else {
++      merged[media] = value;
++    }
++  }
++  return merged;
++};
++var mergeRequestBodyExtras = (base, extra) => {
++  if (!extra) return base;
++  const merged = {
++    ...base
++  };
++  if (typeof extra.description === "string") merged.description = extra.description;
++  if (typeof extra.required === "boolean") merged.required = extra.required;
++  if (extra.content) merged.content = mergeContent(merged.content, extra.content);
++  return merged;
++};
++var mergeResponseExtras = (base, extra) => {
++  if (!extra) return base;
++  const merged = {
++    ...base
++  };
++  if (typeof extra.description === "string") merged.description = extra.description;
++  if (extra.headers)
++    merged.headers = {
++      ...merged.headers,
++      ...extra.headers
++    };
++  if (extra.content) merged.content = mergeContent(merged.content, extra.content);
++  return merged;
++};
++var normalizeResponseHeaders = (headers, vendors) => {
++  if (!headers || typeof headers !== "object") return headers;
++  const normalized = {};
++  for (const [name, header] of Object.entries(headers)) {
++    if (!header) continue;
++    if (header.schema || header.content) {
++      normalized[name] = header;
++      continue;
++    }
++    const schema = unwrapSchema(header, vendors, "output") ?? header;
++    const description = header.description;
++    normalized[name] = description ? { schema, description } : { schema };
++  }
++  return normalized;
++};
+ var enumToOpenApi = (_schema) => {
+   if (!_schema || typeof _schema !== "object") return _schema;
+   if (Kind in _schema) {
+@@ -587,6 +644,7 @@ function toOpenAPISchema(app, exclude, references, vendors) {
+             }
+           };
+         }
++        operation.requestBody = mergeRequestBodyExtras(operation.requestBody, options);
+       }
+     }
+     if (hooks.response) {
+@@ -597,7 +655,8 @@ function toOpenAPISchema(app, exclude, references, vendors) {
+           const response = unwrapSchema(schema, vendors, "output");
+           if (!response) continue;
+           const { type, description, $ref, ..._options } = unwrapReference(response, definitions);
+-          operation.responses[status] = {
++          const responseOptions = _options.headers ? { ..._options, headers: normalizeResponseHeaders(_options.headers, vendors) } : _options;
++          const baseResponse = {
+             description: description ?? `Response for status ${status}`,
+             content: type === "void" || type === "null" || type === "undefined" ? { type, description } : type === "string" || type === "number" || type === "integer" || type === "boolean" ? {
+               "text/plain": {
+@@ -609,6 +668,7 @@ function toOpenAPISchema(app, exclude, references, vendors) {
+               }
+             }
+           };
++          operation.responses[status] = mergeResponseExtras(baseResponse, responseOptions);
+         }
+       } else {
+         const response = unwrapSchema(
+@@ -622,8 +682,9 @@ function toOpenAPISchema(app, exclude, references, vendors) {
+             description,
+             ...options
+           } = unwrapReference(response, definitions);
++          const responseOptions = options.headers ? { ...options, headers: normalizeResponseHeaders(options.headers, vendors) } : options;
+           const type = _type;
+-          operation.responses["200"] = {
++          const baseResponse = {
+             description: description ?? `Response for status 200`,
+             content: type === "void" || type === "null" || type === "undefined" ? { type, description } : type === "string" || type === "number" || type === "integer" || type === "boolean" ? {
+               "text/plain": {
+@@ -635,6 +696,7 @@ function toOpenAPISchema(app, exclude, references, vendors) {
+               }
+             }
+           };
++          operation.responses["200"] = mergeResponseExtras(baseResponse, responseOptions);
+         }
+       }
+     }
+@@ -682,6 +744,31 @@ function toOpenAPISchema(app, exclude, references, vendors) {
+ var withHeaders = (schema, headers) => Object.assign(schema, {
+   headers
+ });
++var deepClone = (value, seen = /* @__PURE__ */ new WeakMap()) => {
++  if (value === null || typeof value !== "object") return value;
++  if (seen.has(value)) return seen.get(value);
++  if (Array.isArray(value)) {
++    const copy = [];
++    seen.set(value, copy);
++    for (const item of value)
++      copy.push(deepClone(item, seen));
++    return copy;
++  }
++  const proto = Object.getPrototypeOf(value);
++  const copy = Object.create(proto);
++  seen.set(value, copy);
++  for (const key of Reflect.ownKeys(value))
++    copy[key] = deepClone(value[key], seen);
++  return copy;
++};
++var withDoc = (schema, options = {}) => {
++  const base = deepClone(schema);
++  if (options.description)
++    base.description = options.description;
++  if (options.content)
++    base.content = options.content;
++  return options.headers ? withHeaders(base, options.headers) : base;
++};
+ export {
+   capitalize,
+   enumToOpenApi,
+@@ -689,5 +776,6 @@ export {
+   getPossiblePath,
+   toOpenAPISchema,
+   unwrapSchema,
++  withDoc,
+   withHeaders
+ };

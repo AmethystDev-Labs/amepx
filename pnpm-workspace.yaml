@@ -1,0 +1,8 @@
+packages:
+  - web
+
+onlyBuiltDependencies:
+  - esbuild
+
+patchedDependencies:
+  '@elysiajs/openapi': patches/@elysiajs__openapi.patch

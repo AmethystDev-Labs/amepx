@@ -1,0 +1,668 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Amepx Admin</title>
+    <style>
+      :root {
+        --bg-1: #f6f7f2;
+        --bg-2: #ffffff;
+        --ink: #1d2321;
+        --muted: #5d6b65;
+        --line: #d8dfdb;
+        --accent: #1b7f5d;
+        --accent-2: #d96f27;
+        --danger: #b43434;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        color: var(--ink);
+        font-family: "IBM Plex Sans", "Noto Sans SC", "PingFang SC", "Segoe UI", sans-serif;
+        background:
+          radial-gradient(1200px 500px at 20% -10%, #e6f4ec 0%, transparent 65%),
+          radial-gradient(900px 500px at 90% 0%, #fff0e2 0%, transparent 62%),
+          var(--bg-1);
+        min-height: 100vh;
+      }
+
+      .page {
+        width: min(1320px, 96vw);
+        margin: 22px auto 34px;
+      }
+
+      .head {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 14px;
+        margin-bottom: 18px;
+      }
+
+      .title {
+        margin: 0;
+        font-size: clamp(28px, 4vw, 42px);
+        letter-spacing: 0.01em;
+        font-weight: 700;
+      }
+
+      .subtitle {
+        margin: 6px 0 0;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .auth {
+        background: rgba(255, 255, 255, 0.82);
+        backdrop-filter: blur(6px);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 12px;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .auth input {
+        min-width: 260px;
+      }
+
+      input,
+      textarea,
+      select,
+      button {
+        border: 1px solid var(--line);
+        background: var(--bg-2);
+        color: var(--ink);
+        border-radius: 12px;
+        padding: 10px 12px;
+        font: inherit;
+      }
+
+      input,
+      textarea,
+      select {
+        width: 100%;
+      }
+
+      textarea {
+        min-height: 88px;
+        resize: vertical;
+      }
+
+      button {
+        cursor: pointer;
+        transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+      }
+
+      button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, var(--accent), #126e4f);
+        border-color: #126e4f;
+        color: #fff;
+      }
+
+      .btn-ghost {
+        background: #fff;
+      }
+
+      .btn-warn {
+        background: #fff7f2;
+        border-color: #efc8a9;
+        color: #9d4e1f;
+      }
+
+      .btn-danger {
+        background: #fff3f3;
+        border-color: #efc3c3;
+        color: var(--danger);
+      }
+
+      .status {
+        margin: 12px 0 14px;
+        font-size: 14px;
+        color: var(--muted);
+        min-height: 1.4em;
+      }
+
+      .grid {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: 1.1fr 1fr;
+      }
+
+      .panel {
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(8px);
+        border-radius: 18px;
+        padding: 16px;
+      }
+
+      .panel h2 {
+        margin: 0 0 10px;
+        font-size: 20px;
+      }
+
+      .panel p.tip {
+        margin: 0 0 12px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .form-grid .full {
+        grid-column: 1 / -1;
+      }
+
+      .row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .list {
+        display: grid;
+        gap: 10px;
+        margin-top: 10px;
+      }
+
+      .client-card {
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 12px;
+        background: #fff;
+      }
+
+      .card-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+
+      .badge {
+        display: inline-block;
+        border-radius: 999px;
+        padding: 2px 10px;
+        font-size: 12px;
+        border: 1px solid var(--line);
+        color: var(--muted);
+      }
+
+      .badge.active {
+        background: #e8f5ef;
+        color: #0f6948;
+        border-color: #b8dfce;
+      }
+
+      .badge.off {
+        background: #f5f5f5;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+
+      th,
+      td {
+        border-bottom: 1px solid var(--line);
+        text-align: left;
+        padding: 8px 6px;
+        vertical-align: top;
+      }
+
+      th {
+        color: var(--muted);
+        font-weight: 600;
+      }
+
+      .mono {
+        font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+        font-size: 12px;
+      }
+
+      .table-wrap {
+        overflow-x: auto;
+      }
+
+      @media (max-width: 1080px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 720px) {
+        .auth {
+          width: 100%;
+          flex-direction: column;
+          align-items: stretch;
+        }
+
+        .auth input {
+          min-width: 0;
+        }
+
+        .form-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <header class="head">
+        <div>
+          <h1 class="title">Amepx Admin Console</h1>
+          <p class="subtitle">OAuth Client / Authorization Request / Token 管理后台</p>
+        </div>
+
+        <div class="auth">
+          <input id="admin-key" type="password" placeholder="x-admin-key (ADMIN_KEY)" />
+          <button id="save-key" class="btn-primary" type="button">保存 Key</button>
+          <button id="refresh-all" class="btn-ghost" type="button">刷新全部</button>
+        </div>
+      </header>
+
+      <p class="status" id="status"></p>
+
+      <section class="grid">
+        <div class="panel">
+          <h2>Client 管理</h2>
+          <p class="tip">支持创建、更新、启停、删除 OAuth Client。</p>
+
+          <form id="create-client-form" class="form-grid">
+            <input class="full" name="clientId" placeholder="clientId (required)" required />
+            <input name="name" placeholder="name (required)" required />
+            <input name="groupId" placeholder="groupId" />
+            <input class="full" name="clientSecret" placeholder="clientSecret (optional)" />
+            <input class="full" name="picture" placeholder="picture URL" />
+            <textarea class="full" name="description" placeholder="description"></textarea>
+            <textarea class="full" name="redirectUris" placeholder="redirectUris，每行一个或逗号分隔" required></textarea>
+            <textarea class="full" name="scopes" placeholder="scopes，空格/逗号/换行分隔"></textarea>
+            <label class="row full">
+              <input id="create-active" type="checkbox" checked />
+              <span>active</span>
+            </label>
+            <button class="btn-primary" type="submit">创建 Client</button>
+          </form>
+
+          <div id="clients" class="list"></div>
+        </div>
+
+        <div class="panel">
+          <h2>授权请求</h2>
+          <p class="tip">最近请求，便于排查 code / request_id / status。</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>requestId</th>
+                  <th>client</th>
+                  <th>status</th>
+                  <th>user</th>
+                  <th>createdAt</th>
+                </tr>
+              </thead>
+              <tbody id="requests-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" style="margin-top: 16px">
+        <h2>Token 管理</h2>
+        <p class="tip">可查看当前 token 状态并执行 revoke。</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>id</th>
+                <th>client</th>
+                <th>user</th>
+                <th>scope</th>
+                <th>access exp</th>
+                <th>state</th>
+                <th>action</th>
+              </tr>
+            </thead>
+            <tbody id="tokens-body"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const state = {
+        adminKey: localStorage.getItem("amepx_admin_key") || "",
+        clients: [],
+        requests: [],
+        tokens: [],
+      };
+
+      const statusEl = document.getElementById("status");
+      const clientsEl = document.getElementById("clients");
+      const requestsBodyEl = document.getElementById("requests-body");
+      const tokensBodyEl = document.getElementById("tokens-body");
+      const keyInputEl = document.getElementById("admin-key");
+
+      keyInputEl.value = state.adminKey;
+
+      function setStatus(text, isError = false) {
+        statusEl.textContent = text;
+        statusEl.style.color = isError ? "#b43434" : "#5d6b65";
+      }
+
+      function esc(value) {
+        return String(value ?? "")
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#39;");
+      }
+
+      async function api(path, options = {}) {
+        const headers = {
+          "x-admin-key": state.adminKey,
+          ...(options.body ? { "content-type": "application/json" } : {}),
+          ...(options.headers || {}),
+        };
+
+        const res = await fetch(path, {
+          ...options,
+          headers,
+        });
+
+        let data;
+        try {
+          data = await res.json();
+        } catch {
+          data = null;
+        }
+
+        if (!res.ok) {
+          const msg =
+            data?.error_description ||
+            data?.error ||
+            `Request failed: ${res.status}`;
+          throw new Error(msg);
+        }
+
+        return data;
+      }
+
+      function parseList(value) {
+        return String(value || "")
+          .split(/[\n,\s]+/)
+          .map((item) => item.trim())
+          .filter(Boolean);
+      }
+
+      function formatTime(value) {
+        if (!value) return "-";
+        const d = new Date(value);
+        if (Number.isNaN(d.getTime())) return "-";
+        return d.toLocaleString();
+      }
+
+      function renderClients() {
+        if (state.clients.length === 0) {
+          clientsEl.innerHTML = '<div class="client-card">暂无 client</div>';
+          return;
+        }
+
+        clientsEl.innerHTML = state.clients
+          .map((client) => {
+            const status = client.active
+              ? '<span class="badge active">ACTIVE</span>'
+              : '<span class="badge off">DISABLED</span>';
+
+            return `
+              <article class="client-card" data-client-id="${esc(client.clientId)}">
+                <div class="card-title">
+                  <div>
+                    <strong>${esc(client.clientId)}</strong>
+                    ${status}
+                  </div>
+                  <div class="mono">${esc(client.name)}</div>
+                </div>
+                <div class="form-grid">
+                  <input data-field="name" value="${esc(client.name)}" placeholder="name" />
+                  <input data-field="groupId" value="${esc(client.groupId || "")}" placeholder="groupId" />
+                  <input class="full" data-field="picture" value="${esc(client.picture || "")}" placeholder="picture" />
+                  <textarea class="full" data-field="description" placeholder="description">${esc(client.description || "")}</textarea>
+                  <textarea class="full" data-field="redirectUris" placeholder="redirectUris">${esc((client.redirectUris || []).join("\n"))}</textarea>
+                  <textarea class="full" data-field="scopes" placeholder="scopes">${esc((client.scopes || []).join("\n"))}</textarea>
+                  <input class="full" data-field="clientSecret" placeholder="new clientSecret (leave empty to keep)" />
+                </div>
+                <div class="row" style="margin-top: 10px">
+                  <button data-action="save" class="btn-primary" type="button">保存</button>
+                  <button data-action="toggle" class="btn-warn" type="button">${client.active ? "禁用" : "启用"}</button>
+                  <button data-action="delete" class="btn-danger" type="button">删除</button>
+                </div>
+              </article>
+            `;
+          })
+          .join("");
+      }
+
+      function renderRequests() {
+        requestsBodyEl.innerHTML = state.requests
+          .map((item) => {
+            const user = item.user?.userId || "-";
+            return `
+              <tr>
+                <td class="mono">${esc(item.requestId)}</td>
+                <td>${esc(item.clientId)}</td>
+                <td>${esc(item.status)}</td>
+                <td class="mono">${esc(user)}</td>
+                <td>${esc(formatTime(item.createdAt))}</td>
+              </tr>
+            `;
+          })
+          .join("");
+      }
+
+      function renderTokens() {
+        tokensBodyEl.innerHTML = state.tokens
+          .map((item) => {
+            const active = !item.revokedAt && new Date(item.accessExpiresAt).getTime() > Date.now();
+            return `
+              <tr>
+                <td class="mono">${esc(item.id)}</td>
+                <td>${esc(item.clientId)}</td>
+                <td class="mono">${esc(item.userId)}</td>
+                <td>${esc((item.scope || []).join(" "))}</td>
+                <td>${esc(formatTime(item.accessExpiresAt))}</td>
+                <td>${active ? "active" : "inactive"}</td>
+                <td>
+                  <button data-token-id="${esc(item.id)}" class="btn-danger" type="button" ${item.revokedAt ? "disabled" : ""}>
+                    revoke
+                  </button>
+                </td>
+              </tr>
+            `;
+          })
+          .join("");
+      }
+
+      async function refreshClients() {
+        const res = await api("/api/admin/clients?include_inactive=true");
+        state.clients = res.items || [];
+        renderClients();
+      }
+
+      async function refreshRequests() {
+        const res = await api("/api/admin/requests?limit=30");
+        state.requests = res.items || [];
+        renderRequests();
+      }
+
+      async function refreshTokens() {
+        const res = await api("/api/admin/tokens?limit=50");
+        state.tokens = res.items || [];
+        renderTokens();
+      }
+
+      async function refreshAll() {
+        setStatus("正在刷新...");
+        try {
+          await Promise.all([refreshClients(), refreshRequests(), refreshTokens()]);
+          setStatus("刷新完成");
+        } catch (error) {
+          setStatus(String(error), true);
+        }
+      }
+
+      document.getElementById("save-key").addEventListener("click", () => {
+        state.adminKey = keyInputEl.value.trim();
+        localStorage.setItem("amepx_admin_key", state.adminKey);
+        setStatus("管理员 Key 已保存");
+      });
+
+      document.getElementById("refresh-all").addEventListener("click", () => {
+        refreshAll();
+      });
+
+      document.getElementById("create-client-form").addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        const form = event.currentTarget;
+        const formData = new FormData(form);
+
+        const payload = {
+          clientId: String(formData.get("clientId") || "").trim(),
+          name: String(formData.get("name") || "").trim(),
+          clientSecret: String(formData.get("clientSecret") || "").trim(),
+          groupId: String(formData.get("groupId") || "").trim(),
+          picture: String(formData.get("picture") || "").trim(),
+          description: String(formData.get("description") || "").trim(),
+          redirectUris: parseList(formData.get("redirectUris")),
+          scopes: parseList(formData.get("scopes")),
+          active: document.getElementById("create-active").checked,
+        };
+
+        try {
+          await api("/api/admin/clients", {
+            method: "POST",
+            body: JSON.stringify(payload),
+          });
+
+          form.reset();
+          document.getElementById("create-active").checked = true;
+          setStatus("Client 创建成功");
+          await refreshClients();
+        } catch (error) {
+          setStatus(String(error), true);
+        }
+      });
+
+      clientsEl.addEventListener("click", async (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLButtonElement)) {
+          return;
+        }
+
+        const card = target.closest(".client-card");
+        if (!card) {
+          return;
+        }
+
+        const clientId = card.getAttribute("data-client-id");
+        if (!clientId) {
+          return;
+        }
+
+        const action = target.getAttribute("data-action");
+
+        try {
+          if (action === "delete") {
+            const ok = window.confirm(`确认删除 client ${clientId} ?`);
+            if (!ok) return;
+            await api(`/api/admin/clients/${encodeURIComponent(clientId)}`, {
+              method: "DELETE",
+            });
+            setStatus(`已删除 ${clientId}`);
+            await refreshClients();
+            return;
+          }
+
+          if (action === "toggle") {
+            const current = state.clients.find((item) => item.clientId === clientId);
+            await api(`/api/admin/clients/${encodeURIComponent(clientId)}`, {
+              method: "PATCH",
+              body: JSON.stringify({ active: !current?.active }),
+            });
+            setStatus(`已更新 ${clientId} 状态`);
+            await refreshClients();
+            return;
+          }
+
+          if (action === "save") {
+            const payload = {
+              name: card.querySelector('[data-field="name"]').value,
+              groupId: card.querySelector('[data-field="groupId"]').value,
+              picture: card.querySelector('[data-field="picture"]').value,
+              description: card.querySelector('[data-field="description"]').value,
+              redirectUris: parseList(card.querySelector('[data-field="redirectUris"]').value),
+              scopes: parseList(card.querySelector('[data-field="scopes"]').value),
+              clientSecret: card.querySelector('[data-field="clientSecret"]').value,
+            };
+
+            await api(`/api/admin/clients/${encodeURIComponent(clientId)}`, {
+              method: "PATCH",
+              body: JSON.stringify(payload),
+            });
+            setStatus(`已保存 ${clientId}`);
+            await refreshClients();
+          }
+        } catch (error) {
+          setStatus(String(error), true);
+        }
+      });
+
+      tokensBodyEl.addEventListener("click", async (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLButtonElement)) {
+          return;
+        }
+
+        const tokenId = target.getAttribute("data-token-id");
+        if (!tokenId) {
+          return;
+        }
+
+        try {
+          await api(`/api/admin/tokens/${encodeURIComponent(tokenId)}/revoke`, {
+            method: "POST",
+          });
+          setStatus(`Token 已 revoke: ${tokenId}`);
+          await refreshTokens();
+        } catch (error) {
+          setStatus(String(error), true);
+        }
+      });
+
+      refreshAll();
+    </script>
+  </body>
+</html>
