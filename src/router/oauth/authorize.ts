@@ -48,17 +48,19 @@ async function renderAuthorizeTemplate(payload: Record<string, string>): Promise
     });
 }
 
-function oauthErrorResponse(
-    set: any,
-    status: number,
-    error: string,
-    errorDescription: string,
-) {
-    set.status = status;
-    return {
-        error,
-        error_description: errorDescription,
-    };
+function oauthErrorResponse(status: number, error: string, errorDescription: string): Response {
+    return new Response(
+        JSON.stringify({
+            error,
+            error_description: errorDescription,
+        }),
+        {
+            status,
+            headers: {
+                "content-type": "application/json; charset=utf-8",
+            },
+        },
+    );
 }
 
 async function generateUniqueCode(): Promise<string> {
@@ -80,10 +82,9 @@ async function generateUniqueCode(): Promise<string> {
 
 export const oauthAuthorizeRouter = new Elysia({ prefix: "/oauth" }).get(
     "/authorize",
-    async ({ query, set }) => {
+    async ({ query }) => {
         if (query.response_type !== "code") {
             return oauthErrorResponse(
-                set,
                 400,
                 "unsupported_response_type",
                 "Only response_type=code is supported",
@@ -98,7 +99,7 @@ export const oauthAuthorizeRouter = new Elysia({ prefix: "/oauth" }).get(
         }).lean();
 
         if (!client) {
-            return oauthErrorResponse(set, 400, "invalid_client", "Unknown or inactive client_id");
+            return oauthErrorResponse(400, "invalid_client", "Unknown or inactive client_id");
         }
 
         let redirectUri = query.redirect_uri;
@@ -107,23 +108,22 @@ export const oauthAuthorizeRouter = new Elysia({ prefix: "/oauth" }).get(
         }
 
         if (!redirectUri) {
-            return oauthErrorResponse(set, 400, "invalid_request", "redirect_uri is required");
+            return oauthErrorResponse(400, "invalid_request", "redirect_uri is required");
         }
 
         if (!client.redirectUris.includes(redirectUri)) {
-            return oauthErrorResponse(set, 400, "invalid_request", "redirect_uri is not registered");
+            return oauthErrorResponse(400, "invalid_request", "redirect_uri is not registered");
         }
 
         const requestedScope = normalizeScope(query.scope);
         if (requestedScope.some((scopeItem) => !client.scopes.includes(scopeItem))) {
-            return oauthErrorResponse(set, 400, "invalid_scope", "Requested scope is not allowed");
+            return oauthErrorResponse(400, "invalid_scope", "Requested scope is not allowed");
         }
 
         const scope = requestedScope.length > 0 ? requestedScope : client.scopes;
         const groupId = query.group_id || client.groupId;
         if (!groupId) {
             return oauthErrorResponse(
-                set,
                 400,
                 "invalid_request",
                 "group_id is required (query.group_id or client.groupId)",
@@ -156,7 +156,6 @@ export const oauthAuthorizeRouter = new Elysia({ prefix: "/oauth" }).get(
             GROUP_ID: String(groupId),
         });
 
-        set.headers["content-type"] = "text/html; charset=utf-8";
         return new Response(html, {
             headers: {
                 "content-type": "text/html; charset=utf-8",
