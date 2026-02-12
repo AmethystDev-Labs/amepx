@@ -20,9 +20,25 @@ export interface OneBotMessage {
 }
 
 export interface OneBotGroupMemberInfo {
+    group_id?: number | string;
     user_id?: number | string;
     nickname?: string;
     card?: string;
+    sex?: string;
+    age?: number;
+    join_time?: number | string;
+    last_sent_time?: number | string;
+    level?: string;
+    qq_level?: number;
+    role?: "owner" | "admin" | "member" | string;
+    title?: string;
+    area?: string;
+    unfriendly?: boolean;
+    title_expire_time?: number;
+    card_changeable?: boolean;
+    shut_up_timestamp?: number;
+    is_robot?: boolean;
+    qage?: number;
     avatar?: string;
 }
 
@@ -50,13 +66,31 @@ function toBaseUrl(url: string): string {
     return url.endsWith("/") ? url : `${url}/`;
 }
 
+function getPositiveIntEnv(name: string, fallback: number): number {
+    const raw = process.env[name];
+    if (!raw) {
+        return fallback;
+    }
+
+    const parsed = Number(raw);
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+        return fallback;
+    }
+
+    return Math.floor(parsed);
+}
+
 class OneBotService {
     private readonly baseUrl: string;
     private readonly accessToken: string;
+    private readonly historyCount: number;
+    private readonly historyFlagMessage: string;
 
     constructor() {
         this.baseUrl = process.env.ONEBOT_HTTP_URL ?? "";
         this.accessToken = process.env.ONEBOT_ACCESS_TOKEN ?? "";
+        this.historyCount = getPositiveIntEnv("ONEBOT_GROUP_HISTORY_COUNT", 1300);
+        this.historyFlagMessage = (process.env.ONEBOT_HISTORY_FLAG_MESSAGE ?? "Amepx!").trim() || "Amepx!";
     }
 
     private getHeaders(): Record<string, string> {
@@ -93,6 +127,58 @@ class OneBotService {
         }
 
         return payload.data as T;
+    }
+
+    private parseMessageId(data: unknown): string | number | null {
+        if (data === null || data === undefined) {
+            return null;
+        }
+
+        if (typeof data === "number" || typeof data === "string") {
+            return data;
+        }
+
+        if (typeof data === "object" && data !== null && "message_id" in data) {
+            const messageId = (data as { message_id?: unknown }).message_id;
+            if (typeof messageId === "number" || typeof messageId === "string") {
+                return messageId;
+            }
+        }
+
+        return null;
+    }
+
+    private async sendGroupHistoryFlag(groupId: string): Promise<string | number | null> {
+        const payload = await this.request<unknown>("send_group_msg", {
+            group_id: toOneBotId(groupId),
+            message: [
+                {
+                    type: "text",
+                    data: {
+                        text: this.historyFlagMessage,
+                    },
+                },
+            ],
+        });
+
+        return this.parseMessageId(payload);
+    }
+
+    private normalizeGroupHistoryData(data: unknown): OneBotMessage[] {
+        if (Array.isArray(data)) {
+            return data as OneBotMessage[];
+        }
+
+        if (!data || typeof data !== "object") {
+            return [];
+        }
+
+        const messages = (data as { messages?: unknown }).messages;
+        if (Array.isArray(messages)) {
+            return messages as OneBotMessage[];
+        }
+
+        return [];
     }
 
     extractPlainText(message: string | OneBotMessageSegment[] | undefined): string {
@@ -137,36 +223,70 @@ class OneBotService {
     }
 
     async getGroupMessageHistory(groupId: string, messageSeq?: number): Promise<OneBotMessage[]> {
-        const params: Record<string, unknown> = {
-            group_id: toOneBotId(groupId),
-        };
+        const group_id = toOneBotId(groupId);
 
         if (typeof messageSeq === "number") {
-            params.message_seq = messageSeq;
+            const data = await this.request<unknown>("get_group_msg_history", {
+                group_id,
+                message_seq: messageSeq,
+                count: this.historyCount,
+                reverse_order: true,
+            });
+            return this.normalizeGroupHistoryData(data);
         }
 
-        const data = await this.request<{ messages?: OneBotMessage[] } | OneBotMessage[]>(
-            "get_group_msg_history",
-            params,
+        let flagMessageId: string | number | null = null;
+        try {
+            flagMessageId = await this.sendGroupHistoryFlag(groupId);
+        } catch (error) {
+            logger.warn(`send_group_msg flag failed: ${String(error)}`);
+        }
+
+        const attempts: Array<Record<string, unknown>> = [];
+        if (flagMessageId !== null) {
+            attempts.push({
+                group_id,
+                message_seq: toOneBotId(flagMessageId),
+                count: this.historyCount,
+                reverse_order: true,
+            });
+        }
+
+        // Fallback for implementations that support no message_seq.
+        attempts.push({
+            group_id,
+            count: this.historyCount,
+            reverse_order: true,
+        });
+        attempts.push({ group_id });
+
+        let lastError: Error | null = null;
+        for (const params of attempts) {
+            try {
+                const data = await this.request<unknown>("get_group_msg_history", params);
+                return this.normalizeGroupHistoryData(data);
+            } catch (error) {
+                lastError = error instanceof Error ? error : new Error(String(error));
+                logger.warn(
+                    `get_group_msg_history failed with params=${JSON.stringify(params)}: ${lastError.message}`,
+                );
+            }
+        }
+
+        throw (
+            lastError ??
+            new Error("get_group_msg_history failed after all attempts")
         );
-
-        if (Array.isArray(data)) {
-            return data;
-        }
-
-        if (data && Array.isArray(data.messages)) {
-            return data.messages;
-        }
-
-        return [];
     }
 
-    async getGroupMemberInfo(groupId: string, userId: string): Promise<OneBotGroupMemberInfo> {
-        return this.request<OneBotGroupMemberInfo>("get_group_member_info", {
+    async getGroupMemberInfo(groupId: string, userId: string): Promise<OneBotGroupMemberInfo | null> {
+        const data = await this.request<unknown>("get_group_member_info", {
             group_id: toOneBotId(groupId),
             user_id: toOneBotId(userId),
             no_cache: false,
         });
+
+        return data && typeof data === "object" ? (data as OneBotGroupMemberInfo) : null;
     }
 
     async resolveCodeFromGroup(

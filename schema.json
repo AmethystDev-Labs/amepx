@@ -39,6 +39,18 @@
       "minLength": 1,
       "description": "OneBot HTTP API bearer token"
     },
+    "ONEBOT_GROUP_HISTORY_COUNT": {
+      "type": "number",
+      "minimum": 1,
+      "default": 10,
+      "description": "History count used by OneBot get_group_msg_history"
+    },
+    "ONEBOT_HISTORY_FLAG_MESSAGE": {
+      "type": "string",
+      "minLength": 1,
+      "default": "Amepx!",
+      "description": "Flag message text sent before get_group_msg_history to obtain message_seq"
+    },
     "OAUTH_ISSUER": {
       "type": "string",
       "minLength": 1,
