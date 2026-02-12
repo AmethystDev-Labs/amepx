@@ -49,26 +49,6 @@ interface OneBotApiResponse<T> {
     data?: T;
 }
 
-interface OneBotGetMsgData {
-    message_id?: number | string;
-    message_seq?: number | string;
-    messageSeq?: number | string;
-    seq?: number | string;
-}
-
-function toOneBotId(id: string | number): string | number {
-    if (typeof id === "number") {
-        return id;
-    }
-
-    const maybeNumber = Number(id);
-    if (!Number.isNaN(maybeNumber) && Number.isFinite(maybeNumber)) {
-        return maybeNumber;
-    }
-
-    return id;
-}
-
 function toBaseUrl(url: string): string {
     return url.endsWith("/") ? url : `${url}/`;
 }
@@ -91,13 +71,11 @@ class OneBotService {
     private readonly baseUrl: string;
     private readonly accessToken: string;
     private readonly historyCount: number;
-    private readonly historyFlagMessage: string;
 
     constructor() {
         this.baseUrl = process.env.ONEBOT_HTTP_URL ?? "";
         this.accessToken = process.env.ONEBOT_ACCESS_TOKEN ?? "";
-        this.historyCount = getPositiveIntEnv("ONEBOT_GROUP_HISTORY_COUNT", 1300);
-        this.historyFlagMessage = (process.env.ONEBOT_HISTORY_FLAG_MESSAGE ?? "Amepx!").trim() || "Amepx!";
+        this.historyCount = getPositiveIntEnv("ONEBOT_GROUP_HISTORY_COUNT", 20);
     }
 
     private getHeaders(): Record<string, string> {
@@ -134,76 +112,6 @@ class OneBotService {
         }
 
         return payload.data as T;
-    }
-
-    private parseMessageId(data: unknown): string | number | null {
-        if (data === null || data === undefined) {
-            return null;
-        }
-
-        if (typeof data === "number" || typeof data === "string") {
-            return data;
-        }
-
-        if (typeof data === "object" && data !== null && "message_id" in data) {
-            const messageId = (data as { message_id?: unknown }).message_id;
-            if (typeof messageId === "number" || typeof messageId === "string") {
-                return messageId;
-            }
-        }
-
-        return null;
-    }
-
-    private parseMessageSeqCandidates(data: unknown): Array<string | number> {
-        if (!data || typeof data !== "object") {
-            return [];
-        }
-
-        const seqFields = ["message_seq", "messageSeq", "seq", "message_id", "id"] as const;
-        const candidates: Array<string | number> = [];
-        for (const field of seqFields) {
-            const value = (data as Record<string, unknown>)[field];
-            if (typeof value === "number" || typeof value === "string") {
-                candidates.push(value);
-            }
-        }
-        return candidates;
-    }
-
-    private async sendGroupHistoryFlag(groupId: string): Promise<string | number | null> {
-        const payload = await this.request<unknown>("send_group_msg", {
-            group_id: toOneBotId(groupId),
-            message: this.historyFlagMessage,
-        });
-
-        return this.parseMessageId(payload);
-    }
-
-    private async getMsg(messageId: string | number): Promise<OneBotGetMsgData | null> {
-        try {
-            const data = await this.request<unknown>("get_msg", {
-                message_id: toOneBotId(messageId),
-            });
-            return data && typeof data === "object" ? (data as OneBotGetMsgData) : null;
-        } catch (error) {
-            logger.warn(`get_msg failed for message_id=${String(messageId)}: ${String(error)}`);
-            return null;
-        }
-    }
-
-    private dedupeIdCandidates(values: Array<string | number>): Array<string | number> {
-        const seen = new Set<string>();
-        const out: Array<string | number> = [];
-        for (const value of values) {
-            const key = String(value);
-            if (seen.has(key)) {
-                continue;
-            }
-            seen.add(key);
-            out.push(value);
-        }
-        return out;
     }
 
     private normalizeGroupHistoryData(data: unknown): OneBotMessage[] {
@@ -264,75 +172,27 @@ class OneBotService {
         return null;
     }
 
-    async getGroupMessageHistory(groupId: string, messageSeq?: number): Promise<OneBotMessage[]> {
-        const group_id = toOneBotId(groupId);
-
-        if (typeof messageSeq === "number") {
-            const data = await this.request<unknown>("get_group_msg_history", {
-                group_id,
-                message_seq: messageSeq,
-                count: this.historyCount,
-                reverse_order: true,
-            });
-            return this.normalizeGroupHistoryData(data);
-        }
-
-        let flagMessageId: string | number | null = null;
-        try {
-            flagMessageId = await this.sendGroupHistoryFlag(groupId);
-        } catch (error) {
-            logger.warn(`send_group_msg flag failed: ${String(error)}`);
-        }
-
-        const attempts: Array<Record<string, unknown>> = [];
-        if (flagMessageId !== null) {
-            const candidates: Array<string | number> = [flagMessageId];
-            const msgData = await this.getMsg(flagMessageId);
-            if (msgData) {
-                candidates.push(...this.parseMessageSeqCandidates(msgData));
-            }
-
-            for (const seq of this.dedupeIdCandidates(candidates)) {
-                attempts.push({
-                    group_id,
-                    message_seq: toOneBotId(seq),
-                    count: this.historyCount,
-                    reverse_order: true,
-                });
-            }
-        }
-
-        // Fallback for implementations that support no message_seq.
-        attempts.push({
-            group_id,
+    async getGroupMessageHistory(groupId: string): Promise<OneBotMessage[]> {
+        const params = {
+            group_id: groupId,
             count: this.historyCount,
-            reverse_order: true,
-        });
-        attempts.push({ group_id });
+        } as const;
 
-        let lastError: Error | null = null;
-        for (const params of attempts) {
-            try {
-                const data = await this.request<unknown>("get_group_msg_history", params);
-                return this.normalizeGroupHistoryData(data);
-            } catch (error) {
-                lastError = error instanceof Error ? error : new Error(String(error));
-                logger.warn(
-                    `get_group_msg_history failed with params=${JSON.stringify(params)}: ${lastError.message}`,
-                );
-            }
+        try {
+            const data = await this.request<unknown>("get_group_msg_history", params);
+            return this.normalizeGroupHistoryData(data);
+        } catch (error) {
+            logger.warn(
+                `get_group_msg_history failed with params=${JSON.stringify(params)}: ${String(error)}`,
+            );
+            throw error;
         }
-
-        throw (
-            lastError ??
-            new Error("get_group_msg_history failed after all attempts")
-        );
     }
 
     async getGroupMemberInfo(groupId: string, userId: string): Promise<OneBotGroupMemberInfo | null> {
         const data = await this.request<unknown>("get_group_member_info", {
-            group_id: toOneBotId(groupId),
-            user_id: toOneBotId(userId),
+            group_id: groupId,
+            user_id: userId,
             no_cache: false,
         });
 
@@ -342,14 +202,13 @@ class OneBotService {
     async resolveCodeFromGroup(
         groupId: string,
         code: string,
-        messageSeq?: number,
     ): Promise<{
         matchedMessage: OneBotMessage | null;
         plainText: string;
         userId: string | null;
         memberInfo: OneBotGroupMemberInfo | null;
     }> {
-        const messages = await this.getGroupMessageHistory(groupId, messageSeq);
+        const messages = await this.getGroupMessageHistory(groupId);
         const matchedMessage = this.findLastMessageContainingCode(messages, code);
         if (!matchedMessage) {
             return {
