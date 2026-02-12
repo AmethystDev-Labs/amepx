@@ -157,7 +157,11 @@ export const oauthAuthorizeRouter = new Elysia({ prefix: "/oauth" }).get(
         });
 
         set.headers["content-type"] = "text/html; charset=utf-8";
-        return html;
+        return new Response(html, {
+            headers: {
+                "content-type": "text/html; charset=utf-8",
+            },
+        });
     },
     {
         query: oauthAuthorizeQuerySchema,
