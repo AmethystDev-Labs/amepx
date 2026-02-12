@@ -7,6 +7,15 @@ import {
 } from "../../models/router/onebot/check.js";
 import { oneBotService } from "../../services/onebot.js";
 
+function buildAuthorizationRedirect(redirectUri: string, code: string, state?: string): string {
+    const url = new URL(redirectUri);
+    url.searchParams.set("code", code);
+    if (state) {
+        url.searchParams.set("state", state);
+    }
+    return url.toString();
+}
+
 function checkError(
     set: any,
     status: number,
@@ -60,14 +69,21 @@ export const onebotCheckRouter = new Elysia({ prefix: "/onebot" }).post(
         }
 
         if (authorizationRequest.status === "approved" || authorizationRequest.status === "consumed") {
+            const redirectTo = buildAuthorizationRedirect(
+                authorizationRequest.redirectUri,
+                authorizationRequest.code,
+                authorizationRequest.state,
+            );
             return {
                 ok: true,
                 done: true,
                 request_id: authorizationRequest.requestId,
                 code: authorizationRequest.code,
+                state: authorizationRequest.state,
                 user_id: authorizationRequest.user?.userId,
                 nickname: authorizationRequest.user?.nickname,
                 card: authorizationRequest.user?.card,
+                redirect_to: redirectTo,
                 message: "Authorization already approved",
             };
         }
@@ -136,14 +152,22 @@ export const onebotCheckRouter = new Elysia({ prefix: "/onebot" }).post(
         };
         await authorizationRequest.save();
 
+        const redirectTo = buildAuthorizationRedirect(
+            authorizationRequest.redirectUri,
+            authorizationRequest.code,
+            authorizationRequest.state,
+        );
+
         return {
             ok: true,
             done: true,
             request_id: authorizationRequest.requestId,
             code: authorizationRequest.code,
+            state: authorizationRequest.state,
             user_id: authorizationRequest.user.userId,
             nickname: authorizationRequest.user.nickname,
             card: authorizationRequest.user.card,
+            redirect_to: redirectTo,
             message: "Authorization approved by OneBot group check",
         };
     },

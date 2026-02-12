@@ -6,6 +6,8 @@
     it.CLIENT_DESCRIPTION ?? it.CLIENTDESCRIPTION ?? it.clientDescription ?? "No description";
   const GROUP_ID = it.GROUP_ID ?? it.GROUPID ?? it.groupId ?? "000000";
   const REQUEST_ID = it.REQUEST_ID ?? it.requestId ?? "";
+  const REDIRECT_URI = it.REDIRECT_URI ?? it.redirectUri ?? "";
+  const STATE = it.STATE ?? it.state ?? "";
 %>
 <!doctype html>
 <html lang="zh-CN">
@@ -18,6 +20,12 @@
     <script>
       function authorizePage() {
         const requestId = "<%= REQUEST_ID %>";
+        const query = new URL(window.location.href).searchParams;
+        const redirectUriFromQuery = query.get("redirect_uri");
+        const stateFromQuery = query.get("state");
+        const root = document.querySelector("main.wrap");
+        const redirectUriFromServer = root?.dataset.redirectUri || "";
+        const stateFromServer = root?.dataset.state || "";
 
         return {
           finished: false,
@@ -38,6 +46,19 @@
 
               if (data.done) {
                 this.finished = true;
+                const code = data.code;
+                const state = data.state || stateFromQuery || stateFromServer;
+                const redirectUri = redirectUriFromQuery || redirectUriFromServer;
+                if (code && redirectUri) {
+                  const callbackUrl = new URL(redirectUri);
+                  callbackUrl.searchParams.set("code", code);
+                  if (state) {
+                    callbackUrl.searchParams.set("state", state);
+                  }
+                  this.statusText = "已完成校验，正在跳转...";
+                  window.location.replace(callbackUrl.toString());
+                  return;
+                }
                 this.statusText = data.message || "已完成校验";
               } else {
                 this.statusText = data.message || "未找到代码，请发送后重试";
@@ -154,7 +175,12 @@
     </style>
   </head>
   <body>
-    <main class="wrap" x-data="authorizePage()">
+    <main
+      class="wrap"
+      x-data="authorizePage()"
+      data-redirect-uri="<%= REDIRECT_URI %>"
+      data-state="<%= STATE %>"
+    >
       <section class="app">
         <img class="avatar" src="<%= CLIENTPICTURE %>" alt="<%= CLIENTNAME %> logo" />
         <div>

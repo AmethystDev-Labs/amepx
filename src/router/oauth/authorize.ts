@@ -154,6 +154,8 @@ export const oauthAuthorizeRouter = new Elysia({ prefix: "/oauth" }).get(
             CLIENTPICTURE: client.picture || "https://placehold.co/96x96/png",
             CLIENT_DESCRIPTION: client.description || "No description",
             GROUP_ID: String(groupId),
+            REDIRECT_URI: redirectUri,
+            STATE: query.state || "",
         });
 
         return new Response(html, {
