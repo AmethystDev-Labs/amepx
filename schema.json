@@ -1,0 +1,67 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Environment Variables",
+  "type": "object",
+  "required": ["MONGO_URL", "MONGO_DB", "SECRET_KEY"],
+  "properties": {
+    "NODE_ENV": {
+      "type": "string",
+      "enum": ["development", "production", "test"],
+      "default": "development"
+    },
+    "SECRET_KEY": {
+      "type": "string",
+      "minLength": 16,
+      "description": "Secret key for token hashing and signing"
+    },
+    "ADMIN_KEY": {
+      "type": "string",
+      "minLength": 8,
+      "description": "Admin panel API key used in x-admin-key header"
+    },
+    "MONGO_URL": {
+      "type": "string",
+      "format": "mongo-uri",
+      "description": "MongoDB connection string"
+    },
+    "MONGO_DB": {
+      "type": "string",
+      "minLength": 1,
+      "description": "MongoDB database name"
+    },
+    "ONEBOT_HTTP_URL": {
+      "type": "string",
+      "minLength": 1,
+      "description": "OneBot v11 HTTP API base URL"
+    },
+    "ONEBOT_ACCESS_TOKEN": {
+      "type": "string",
+      "minLength": 1,
+      "description": "OneBot HTTP API bearer token"
+    },
+    "OAUTH_CODE_TTL_SECONDS": {
+      "type": "number",
+      "minimum": 1,
+      "default": 300,
+      "description": "OAuth2 authorization code lifetime in seconds"
+    },
+    "OAUTH_ACCESS_TOKEN_TTL_SECONDS": {
+      "type": "number",
+      "minimum": 1,
+      "default": 3600,
+      "description": "OAuth2 access token lifetime in seconds"
+    },
+    "OAUTH_REFRESH_TOKEN_TTL_SECONDS": {
+      "type": "number",
+      "minimum": 1,
+      "default": 2592000,
+      "description": "OAuth2 refresh token lifetime in seconds"
+    },
+    "PORT": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 65535,
+      "description": "HTTP server port"
+    }
+  }
+}
