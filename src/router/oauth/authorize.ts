@@ -11,6 +11,7 @@ import {
     getOAuthCodeTtlSeconds,
     normalizeScope,
 } from "../../utils/oauth.js";
+import { OIDC_DEFAULT_SCOPES } from "../../utils/oidc.js";
 import {
     oauthAuthorizeErrorSchema,
     oauthAuthorizeQuerySchema,
@@ -116,11 +117,20 @@ export const oauthAuthorizeRouter = new Elysia({ prefix: "/oauth" }).get(
         }
 
         const requestedScope = normalizeScope(query.scope);
-        if (requestedScope.some((scopeItem) => !client.scopes.includes(scopeItem))) {
+        const allowedScopes = new Set<string>([
+            ...client.scopes,
+            ...OIDC_DEFAULT_SCOPES,
+        ]);
+        if (requestedScope.some((scopeItem) => !allowedScopes.has(scopeItem))) {
             return oauthErrorResponse(400, "invalid_scope", "Requested scope is not allowed");
         }
 
-        const scope = requestedScope.length > 0 ? requestedScope : client.scopes;
+        const scope =
+            requestedScope.length > 0
+                ? requestedScope
+                : client.scopes.length > 0
+                  ? client.scopes
+                  : [...OIDC_DEFAULT_SCOPES];
         const groupId = query.group_id || client.groupId;
         if (!groupId) {
             return oauthErrorResponse(
@@ -140,6 +150,7 @@ export const oauthAuthorizeRouter = new Elysia({ prefix: "/oauth" }).get(
             clientId: client.clientId,
             redirectUri,
             state: query.state,
+            nonce: query.nonce,
             scope,
             groupId,
             code,

@@ -20,6 +20,7 @@ export interface OAuthAuthorizationRequestDocument extends Document {
     clientId: string;
     redirectUri: string;
     state?: string;
+    nonce?: string;
     scope: string[];
     groupId: string;
     code: string;
@@ -73,6 +74,11 @@ const OAuthAuthorizationRequestSchema = new Schema<OAuthAuthorizationRequestDocu
             trim: true,
         },
         state: {
+            type: String,
+            required: false,
+            trim: true,
+        },
+        nonce: {
             type: String,
             required: false,
             trim: true,

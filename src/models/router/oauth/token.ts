@@ -1,18 +1,21 @@
 import { t } from "elysia";
 import { withDoc } from "@elysiajs/openapi";
 
+export const oauthTokenRequestObjectSchema = t.Object({
+    grant_type: t.String({ minLength: 1 }),
+    client_id: t.Optional(t.String({ minLength: 1 })),
+    client_secret: t.Optional(t.String({ minLength: 1 })),
+    code: t.Optional(t.String({ minLength: 1 })),
+    redirect_uri: t.Optional(t.String({ minLength: 1 })),
+    refresh_token: t.Optional(t.String({ minLength: 1 })),
+    scope: t.Optional(t.String({ minLength: 1 })),
+});
+
 export const oauthTokenBodySchema = withDoc(
-    t.Object({
-        grant_type: t.String({ minLength: 1 }),
-        client_id: t.Optional(t.String({ minLength: 1 })),
-        client_secret: t.Optional(t.String({ minLength: 1 })),
-        code: t.Optional(t.String({ minLength: 1 })),
-        redirect_uri: t.Optional(t.String({ minLength: 1 })),
-        refresh_token: t.Optional(t.String({ minLength: 1 })),
-    }),
+    t.Union([oauthTokenRequestObjectSchema, t.String()]),
     {
         description:
-            "OAuth2 token request body. Supports grant_type=authorization_code and grant_type=refresh_token.",
+            "OAuth2 token request body. Supports application/json and x-www-form-urlencoded payloads.",
     },
 );
 
@@ -22,6 +25,7 @@ export const oauthTokenSuccessSchema = withDoc(
         access_token: t.String(),
         expires_in: t.Number(),
         refresh_token: t.String(),
+        id_token: t.Optional(t.String()),
         scope: t.Optional(t.String()),
     }),
     {

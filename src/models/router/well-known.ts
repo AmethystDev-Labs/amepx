@@ -26,6 +26,8 @@ export const openidConfigurationSchema = withDoc(
         response_types_supported: t.Array(t.String()),
         grant_types_supported: t.Array(t.String()),
         token_endpoint_auth_methods_supported: t.Array(t.String()),
+        subject_types_supported: t.Array(t.String()),
+        id_token_signing_alg_values_supported: t.Array(t.String()),
         scopes_supported: t.Array(t.String()),
         claims_supported: t.Array(t.String()),
     }),

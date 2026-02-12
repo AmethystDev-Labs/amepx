@@ -12,6 +12,7 @@ import {
     serializeScope,
     verifyClientSecret,
 } from "../../utils/oauth.js";
+import { buildIdToken, resolveIssuer } from "../../utils/oidc.js";
 import {
     oauthTokenBodySchema,
     oauthTokenErrorSchema,
@@ -37,6 +38,7 @@ function oauthErrorResponse(
 }
 
 async function issueTokens(params: {
+    issuer: string;
     clientId: string;
     userId: string;
     scope: string[];
@@ -45,6 +47,8 @@ async function issueTokens(params: {
     nickname?: string;
     card?: string;
     avatar?: string;
+    nonce?: string;
+    authTimeSeconds?: number;
     rotatedFrom?: string;
 }) {
     const accessTokenTtlSeconds = getOAuthAccessTokenTtlSeconds();
@@ -73,26 +77,77 @@ async function issueTokens(params: {
         rotatedFrom: params.rotatedFrom,
     });
 
-    return {
+    const response: {
+        token_type: "Bearer";
+        access_token: string;
+        expires_in: number;
+        refresh_token: string;
+        scope?: string;
+        id_token?: string;
+    } = {
         token_type: "Bearer" as const,
         access_token: accessToken,
         expires_in: accessTokenTtlSeconds,
         refresh_token: refreshToken,
         scope: serializeScope(params.scope),
     };
+
+    if (params.scope.includes("openid")) {
+        response.id_token = buildIdToken({
+            issuer: params.issuer,
+            audience: params.clientId,
+            userId: params.userId,
+            scope: params.scope,
+            expiresInSeconds: accessTokenTtlSeconds,
+            nickname: params.nickname,
+            card: params.card,
+            avatar: params.avatar,
+            nonce: params.nonce,
+            authTimeSeconds: params.authTimeSeconds,
+        });
+    }
+
+    return response;
 }
 
-export const oauthTokenRouter = new Elysia({ prefix: "/oauth" }).post(
-    "/token",
-    async ({ body, headers, set }) => {
-        const input = body as {
+function parseTokenBody(rawBody: unknown): {
+    grant_type: string;
+    client_id?: string;
+    client_secret?: string;
+    code?: string;
+    redirect_uri?: string;
+    refresh_token?: string;
+    scope?: string;
+} {
+    if (typeof rawBody === "string") {
+        const parsed = Object.fromEntries(new URLSearchParams(rawBody).entries());
+        return parsed as {
             grant_type: string;
             client_id?: string;
             client_secret?: string;
             code?: string;
             redirect_uri?: string;
             refresh_token?: string;
+            scope?: string;
         };
+    }
+
+    return (rawBody ?? {}) as {
+        grant_type: string;
+        client_id?: string;
+        client_secret?: string;
+        code?: string;
+        redirect_uri?: string;
+        refresh_token?: string;
+        scope?: string;
+    };
+}
+
+export const oauthTokenRouter = new Elysia({ prefix: "/oauth" }).post(
+    "/token",
+    async ({ body, headers, set, request }) => {
+        const input = parseTokenBody(body);
+        const issuer = resolveIssuer(request);
 
         set.headers["cache-control"] = "no-store";
         set.headers.pragma = "no-cache";
@@ -173,6 +228,7 @@ export const oauthTokenRouter = new Elysia({ prefix: "/oauth" }).post(
             }
 
             const tokenResponse = await issueTokens({
+                issuer,
                 clientId: client.clientId,
                 userId: authorizationRequest.user.userId,
                 scope: authorizationRequest.scope,
@@ -181,6 +237,10 @@ export const oauthTokenRouter = new Elysia({ prefix: "/oauth" }).post(
                 nickname: authorizationRequest.user.nickname,
                 card: authorizationRequest.user.card,
                 avatar: authorizationRequest.user.avatar,
+                nonce: authorizationRequest.nonce,
+                authTimeSeconds: authorizationRequest.approvedAt
+                    ? Math.floor(authorizationRequest.approvedAt.getTime() / 1000)
+                    : undefined,
             });
 
             authorizationRequest.status = "consumed";
@@ -219,6 +279,7 @@ export const oauthTokenRouter = new Elysia({ prefix: "/oauth" }).post(
             await tokenDoc.save();
 
             const tokenResponse = await issueTokens({
+                issuer,
                 clientId: tokenDoc.clientId,
                 userId: tokenDoc.userId,
                 scope: tokenDoc.scope,

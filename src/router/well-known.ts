@@ -3,6 +3,7 @@ import {
     oauthAuthorizationServerMetadataSchema,
     openidConfigurationSchema,
 } from "../models/router/well-known.js";
+import { OIDC_DEFAULT_SCOPES } from "../utils/oidc.js";
 
 function trimTrailingSlash(value: string): string {
     return value.replace(/\/+$/, "");
@@ -31,7 +32,7 @@ function makeMetadata(issuer: string) {
         response_types_supported: ["code"],
         grant_types_supported: ["authorization_code", "refresh_token"],
         token_endpoint_auth_methods_supported: ["client_secret_basic", "client_secret_post"],
-        scopes_supported: ["profile"],
+        scopes_supported: [...OIDC_DEFAULT_SCOPES],
     };
 }
 
@@ -60,7 +61,20 @@ export const wellKnownRouter = new Elysia()
 
             return {
                 ...metadata,
-                claims_supported: ["sub", "client_id", "group_id", "nickname", "card", "avatar", "scope"],
+                subject_types_supported: ["public"],
+                id_token_signing_alg_values_supported: ["HS256"],
+                claims_supported: [
+                    "sub",
+                    "name",
+                    "nickname",
+                    "preferred_username",
+                    "picture",
+                    "email",
+                    "email_verified",
+                    "client_id",
+                    "group_id",
+                    "scope",
+                ],
             };
         },
         {

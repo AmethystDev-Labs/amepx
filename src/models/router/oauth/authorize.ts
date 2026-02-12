@@ -8,6 +8,7 @@ export const oauthAuthorizeQuerySchema = withDoc(
         redirect_uri: t.Optional(t.String({ minLength: 1 })),
         scope: t.Optional(t.String()),
         state: t.Optional(t.String()),
+        nonce: t.Optional(t.String()),
         group_id: t.Optional(t.String({ minLength: 1 })),
     }),
     {

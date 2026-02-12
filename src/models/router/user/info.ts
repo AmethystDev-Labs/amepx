@@ -13,6 +13,11 @@ export const userInfoHeadersSchema = withDoc(
 export const userInfoResponseSchema = withDoc(
     t.Object({
         sub: t.String(),
+        name: t.Optional(t.String()),
+        preferred_username: t.Optional(t.String()),
+        picture: t.Optional(t.String()),
+        email: t.Optional(t.String()),
+        email_verified: t.Optional(t.Boolean()),
         client_id: t.String(),
         group_id: t.Optional(t.String()),
         nickname: t.Optional(t.String()),

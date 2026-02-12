@@ -7,6 +7,7 @@ import {
     userInfoResponseSchema,
 } from "../../models/router/user/info.js";
 import { hashTokenValue } from "../../utils/oauth.js";
+import { buildStandardUserClaims } from "../../utils/oidc.js";
 
 function extractBearerToken(authorization: string): string | null {
     const match = authorization.match(/^Bearer\s+(.+)$/i);
@@ -66,7 +67,16 @@ export const userInfoRouter = new Elysia({ prefix: "/user" }).get(
             return userInfoError(set, 401, "invalid_token", "Access token expired");
         }
 
+        const oidcClaims = buildStandardUserClaims({
+            userId: tokenDoc.userId,
+            scope: tokenDoc.scope,
+            nickname: tokenDoc.nickname,
+            card: tokenDoc.card,
+            avatar: tokenDoc.avatar,
+        });
+
         return {
+            ...oidcClaims,
             sub: tokenDoc.userId,
             client_id: tokenDoc.clientId,
             group_id: tokenDoc.groupId,
