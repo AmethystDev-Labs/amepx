@@ -39,6 +39,11 @@
       "minLength": 1,
       "description": "OneBot HTTP API bearer token"
     },
+    "OAUTH_ISSUER": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Public issuer URL used by well-known discovery endpoints"
+    },
     "OAUTH_CODE_TTL_SECONDS": {
       "type": "number",
       "minimum": 1,

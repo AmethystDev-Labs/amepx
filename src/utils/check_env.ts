@@ -17,6 +17,7 @@ interface Env {
   ADMIN_KEY?: string;
   ONEBOT_HTTP_URL?: string;
   ONEBOT_ACCESS_TOKEN?: string;
+  OAUTH_ISSUER?: string;
   OAUTH_CODE_TTL_SECONDS?: number;
   OAUTH_ACCESS_TOKEN_TTL_SECONDS?: number;
   OAUTH_REFRESH_TOKEN_TTL_SECONDS?: number;

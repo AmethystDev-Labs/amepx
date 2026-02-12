@@ -3,6 +3,7 @@ import { Elysia } from "elysia";
 import { validateEnv } from "./utils/check_env.js";
 import { router } from "./router/router.js";
 import { adminPanelRouter } from "./router/admin/panel.js";
+import { wellKnownRouter } from "./router/well-known.js";
 import { Logger, type LoggerType } from "./utils/logger.js";
 import { init } from "./server.js";
 import { openapi, fromTypes } from "@elysiajs/openapi";
@@ -16,6 +17,7 @@ logger.info("Hello from Ampex!")
 
 elysia
   .use(adminPanelRouter)
+  .use(wellKnownRouter)
   .use(router)
   .use(openapi({
     references: fromTypes() 
