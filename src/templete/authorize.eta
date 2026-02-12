@@ -8,209 +8,379 @@
   const REQUEST_ID = it.REQUEST_ID ?? it.requestId ?? "";
   const REDIRECT_URI = it.REDIRECT_URI ?? it.redirectUri ?? "";
   const STATE = it.STATE ?? it.state ?? "";
+  const SCOPES = it.SCOPES ?? it.scopes ?? "";
 %>
 <!doctype html>
 <html lang="zh-CN">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>OAuth2 授权</title>
-    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js"></script>
-    <script>
-      function authorizePage() {
-        const requestId = "<%= REQUEST_ID %>";
-        const query = new URL(window.location.href).searchParams;
-        const redirectUriFromQuery = query.get("redirect_uri");
-        const stateFromQuery = query.get("state");
-        const root = document.querySelector("main.wrap");
-        const redirectUriFromServer = root?.dataset.redirectUri || "";
-        const stateFromServer = root?.dataset.state || "";
-
-        return {
-          finished: false,
-          checking: false,
-          statusText: "",
-          async finish() {
-            if (this.checking || this.finished) return;
-            this.checking = true;
-            this.statusText = "正在校验群消息...";
-
-            try {
-              const response = await fetch("/api/onebot/check", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ request_id: requestId }),
-              });
-              const data = await response.json();
-
-              if (data.done) {
-                this.finished = true;
-                const code = data.code;
-                const state = data.state || stateFromQuery || stateFromServer;
-                const redirectUri = redirectUriFromQuery || redirectUriFromServer;
-                if (code && redirectUri) {
-                  const callbackUrl = new URL(redirectUri);
-                  callbackUrl.searchParams.set("code", code);
-                  if (state) {
-                    callbackUrl.searchParams.set("state", state);
-                  }
-                  this.statusText = "已完成校验，正在跳转...";
-                  window.location.replace(callbackUrl.toString());
-                  return;
-                }
-                this.statusText = data.message || "已完成校验";
-              } else {
-                this.statusText = data.message || "未找到代码，请发送后重试";
-              }
-            } catch (_) {
-              this.statusText = "校验失败，请稍后重试";
-            } finally {
-              this.checking = false;
-            }
-          },
-        };
-      }
-    </script>
+    <title>Authorize Access</title>
     <style>
       :root {
-        color-scheme: only light;
-        --bg: #ffffff;
-        --text: #000000;
-        --line: #000000;
+        --bg: #f4f7f5;
+        --surface: #ffffff;
+        --surface-soft: #f8fbf9;
+        --text: #0f1b16;
+        --muted: #5f7168;
+        --line: #d6e0da;
+        --accent: #17795b;
+        --accent-ink: #ffffff;
       }
+
       * {
         box-sizing: border-box;
       }
+
       body {
         margin: 0;
         min-height: 100vh;
-        font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif;
-        font-weight: 300;
+        background:
+          radial-gradient(960px 420px at 5% -5%, #def3e8 0%, transparent 60%),
+          radial-gradient(900px 460px at 100% -15%, #e7eef8 0%, transparent 62%),
+          var(--bg);
         color: var(--text);
-        background: var(--bg);
-        display: grid;
-        place-items: center;
-        padding: 20px;
+        font-family: "IBM Plex Sans", "Noto Sans SC", "PingFang SC", sans-serif;
+        font-weight: 400;
+        padding: 28px 18px 34px;
       }
-      .wrap {
-        width: min(620px, 100%);
+
+      .page {
+        width: min(860px, 100%);
+        margin: 0 auto;
       }
+
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        box-shadow: 0 16px 36px rgba(19, 45, 33, 0.08);
+        overflow: hidden;
+      }
+
+      .hero {
+        padding: 22px 24px;
+        border-bottom: 1px solid var(--line);
+        background: linear-gradient(160deg, #fcfffd, #f5fbf8 60%);
+      }
+
       .app {
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 14px;
       }
+
       .avatar {
-        width: 44px;
-        height: 44px;
-        border-radius: 999px;
+        width: 56px;
+        height: 56px;
+        border-radius: 16px;
         object-fit: cover;
-        border: 1px solid var(--line);
+        border: 1px solid #cddad3;
+        background: #f0f4f2;
       }
+
       .name {
         margin: 0;
-        font-size: 24px;
-        font-weight: 300;
+        font-size: 28px;
+        line-height: 1.2;
         letter-spacing: 0.01em;
+        font-weight: 700;
       }
+
       .desc {
-        margin: 2px 0 0;
-        font-size: 14px;
-        opacity: 0.65;
+        margin: 3px 0 0;
+        color: var(--muted);
+        font-size: 15px;
       }
-      .claim {
-        margin: 42px 0 14px;
-        font-size: 21px;
-        font-weight: 300;
+
+      .content {
+        padding: 22px 24px 26px;
       }
-      .line {
-        border: 0;
-        border-top: 1px solid var(--line);
-        margin: 12px 0;
+
+      .section-title {
+        margin: 0 0 10px;
+        font-size: 16px;
+        font-weight: 700;
       }
+
+      .scope-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        margin-bottom: 18px;
+      }
+
+      .scope-item {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: var(--surface-soft);
+        padding: 10px;
+      }
+
+      .scope-name {
+        margin: 0;
+        font-size: 13px;
+        font-weight: 700;
+        color: #0d3125;
+      }
+
+      .scope-desc {
+        margin: 4px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      .code-box {
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 18px 14px;
+        background: #fcfffd;
+        margin: 4px 0 14px;
+      }
+
+      .code-label {
+        margin: 0 0 8px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
       .code {
         margin: 0;
         text-align: center;
-        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+        font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Consolas, monospace;
         letter-spacing: 0.22em;
-        font-size: clamp(30px, 10vw, 48px);
-        font-weight: 300;
+        font-size: clamp(34px, 7vw, 58px);
+        font-weight: 600;
       }
+
       .tip {
-        margin: 20px 0 26px;
-        line-height: 1.75;
-        opacity: 0.72;
-      }
-      .group {
-        font-weight: 400;
-        color: var(--text);
-        letter-spacing: 0.02em;
-      }
-      .finish {
-        border: 1px solid var(--line);
-        border-radius: 999px;
-        padding: 10px 30px;
-        font-size: 18px;
-        font-weight: 300;
-        letter-spacing: 0.02em;
-        color: var(--text);
-        background: #fff;
-        cursor: pointer;
-        transition: background 0.12s ease, color 0.12s ease;
-      }
-      .finish:hover {
-        background: #000;
-        color: #fff;
-      }
-      .finish:disabled {
-        cursor: not-allowed;
-        opacity: 0.5;
-      }
-      .done {
-        margin: 14px 0 0;
+        margin: 0 0 16px;
         font-size: 14px;
-        opacity: 0.7;
+        line-height: 1.7;
+        color: #2f433b;
+      }
+
+      .group {
+        font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+        font-weight: 600;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .finish {
+        border: 1px solid transparent;
+        border-radius: 12px;
+        padding: 11px 20px;
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--accent-ink);
+        background: linear-gradient(140deg, #198c68, #13684d);
+        cursor: pointer;
+      }
+
+      .finish:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+
+      .status {
+        margin: 0;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      @media (max-width: 760px) {
+        .scope-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .hero,
+        .content {
+          padding: 16px;
+        }
+
+        .name {
+          font-size: 24px;
+        }
       }
     </style>
   </head>
   <body>
     <main
-      class="wrap"
-      x-data="authorizePage()"
+      class="page"
+      data-request-id="<%= REQUEST_ID %>"
       data-redirect-uri="<%= REDIRECT_URI %>"
       data-state="<%= STATE %>"
+      data-scopes="<%= SCOPES %>"
     >
-      <section class="app">
-        <img class="avatar" src="<%= CLIENTPICTURE %>" alt="<%= CLIENTNAME %> logo" />
-        <div>
-          <h1 class="name"><%= CLIENTNAME %></h1>
-          <p class="desc"><%= CLIENT_DESCRIPTION %></p>
+      <section class="card">
+        <header class="hero">
+          <div class="app">
+            <img class="avatar" src="<%= CLIENTPICTURE %>" alt="<%= CLIENTNAME %> logo" />
+            <div>
+              <h1 class="name"><%= CLIENTNAME %></h1>
+              <p class="desc"><%= CLIENT_DESCRIPTION %></p>
+            </div>
+          </div>
+        </header>
+
+        <div class="content">
+          <h2 class="section-title">该应用将请求以下权限</h2>
+          <div id="scope-grid" class="scope-grid"></div>
+
+          <div class="code-box">
+            <p class="code-label">授权代码</p>
+            <p class="code"><%= CODE %></p>
+          </div>
+
+          <p class="tip">
+            请将上方代码发送到群 <span class="group"><%= GROUP_ID %></span>，完成后点击下方按钮继续。
+          </p>
+
+          <div class="actions">
+            <button id="finish-btn" class="finish" type="button">完成并继续</button>
+            <p id="status-text" class="status"></p>
+          </div>
         </div>
       </section>
-
-      <p class="claim">申请获取你的信息</p>
-      <hr class="line" />
-      <p class="code"><%= CODE %></p>
-      <hr class="line" />
-
-      <p class="tip">
-        请将代码发送到 <span class="group"><%= GROUP_ID %></span> 群中，完成后点击下方按钮
-      </p>
-
-      <button
-        class="finish"
-        type="button"
-        x-on:click="finish()"
-        :disabled="finished || checking"
-      >
-        <span x-show="!finished && !checking">Finish</span>
-        <span x-show="checking">Checking...</span>
-        <span x-show="finished">Finished</span>
-      </button>
-
-      <p class="done" x-show="finished">已标记完成，你可以关闭当前页面。</p>
-      <p class="done" x-show="statusText" x-text="statusText"></p>
     </main>
+
+    <script>
+      (function () {
+        const root = document.querySelector("main.page");
+        const requestId = root.dataset.requestId || "";
+        const redirectUriServer = root.dataset.redirectUri || "";
+        const stateServer = root.dataset.state || "";
+        const scopesServer = root.dataset.scopes || "";
+
+        const query = new URL(window.location.href).searchParams;
+        const redirectUri = query.get("redirect_uri") || redirectUriServer;
+        const state = query.get("state") || stateServer;
+        const scopeText = query.get("scope") || scopesServer;
+
+        const finishBtn = document.getElementById("finish-btn");
+        const statusText = document.getElementById("status-text");
+        const scopeGrid = document.getElementById("scope-grid");
+
+        const scopeMeta = {
+          openid: {
+            title: "openid",
+            desc: "识别你的账号主体（sub），用于登录鉴权。",
+          },
+          profile: {
+            title: "profile",
+            desc: "读取昵称、头像等基础资料，用于展示个人信息。",
+          },
+          email: {
+            title: "email",
+            desc: "读取邮箱标识信息（当前映射为 QQ 邮箱形式）。",
+          },
+        };
+
+        function esc(value) {
+          return String(value ?? "")
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;")
+            .replaceAll("'", "&#39;");
+        }
+
+        function parseScopes(source) {
+          return String(source || "")
+            .split(/\s+/)
+            .map((item) => item.trim())
+            .filter(Boolean);
+        }
+
+        function renderScopes(scopes) {
+          if (!scopes.length) {
+            scopeGrid.innerHTML = '<div class="scope-item"><p class="scope-name">basic</p><p class="scope-desc">读取基础身份信息。</p></div>';
+            return;
+          }
+
+          scopeGrid.innerHTML = scopes
+            .map((scope) => {
+              const meta = scopeMeta[scope] || {
+                title: scope,
+                desc: "请求该应用定义的扩展权限。",
+              };
+              return `
+                <article class="scope-item">
+                  <p class="scope-name">${esc(meta.title)}</p>
+                  <p class="scope-desc">${esc(meta.desc)}</p>
+                </article>
+              `;
+            })
+            .join("");
+        }
+
+        function setStatus(text, isError) {
+          statusText.textContent = text || "";
+          statusText.style.color = isError ? "#bb3b3b" : "#5f7168";
+        }
+
+        async function finish() {
+          if (!requestId) {
+            setStatus("request_id 缺失", true);
+            return;
+          }
+
+          finishBtn.disabled = true;
+          setStatus("正在校验群消息...");
+
+          try {
+            const response = await fetch("/api/onebot/check", {
+              method: "POST",
+              headers: {
+                "content-type": "application/json",
+              },
+              body: JSON.stringify({ request_id: requestId }),
+            });
+
+            const data = await response.json();
+            if (!response.ok) {
+              setStatus(data.error_description || data.error || "校验失败", true);
+              finishBtn.disabled = false;
+              return;
+            }
+
+            if (!data.done) {
+              setStatus(data.message || "未找到代码，请发送后重试", false);
+              finishBtn.disabled = false;
+              return;
+            }
+
+            const code = data.code;
+            const finalState = data.state || state;
+            if (redirectUri && code) {
+              const callbackUrl = new URL(redirectUri);
+              callbackUrl.searchParams.set("code", code);
+              if (finalState) {
+                callbackUrl.searchParams.set("state", finalState);
+              }
+
+              setStatus("校验成功，正在跳转...");
+              window.location.replace(callbackUrl.toString());
+              return;
+            }
+
+            setStatus(data.message || "已完成授权，但缺少跳转参数", false);
+          } catch (error) {
+            setStatus(String(error), true);
+            finishBtn.disabled = false;
+          }
+        }
+
+        renderScopes(parseScopes(scopeText));
+        finishBtn.addEventListener("click", finish);
+      })();
+    </script>
   </body>
 </html>

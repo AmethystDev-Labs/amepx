@@ -167,6 +167,7 @@ export const oauthAuthorizeRouter = new Elysia({ prefix: "/oauth" }).get(
             GROUP_ID: String(groupId),
             REDIRECT_URI: redirectUri,
             STATE: query.state || "",
+            SCOPES: scope.join(" "),
         });
 
         return new Response(html, {
