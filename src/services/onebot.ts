@@ -49,6 +49,13 @@ interface OneBotApiResponse<T> {
     data?: T;
 }
 
+interface OneBotGetMsgData {
+    message_id?: number | string;
+    message_seq?: number | string;
+    messageSeq?: number | string;
+    seq?: number | string;
+}
+
 function toOneBotId(id: string | number): string | number {
     if (typeof id === "number") {
         return id;
@@ -148,20 +155,55 @@ class OneBotService {
         return null;
     }
 
+    private parseMessageSeqCandidates(data: unknown): Array<string | number> {
+        if (!data || typeof data !== "object") {
+            return [];
+        }
+
+        const seqFields = ["message_seq", "messageSeq", "seq", "message_id", "id"] as const;
+        const candidates: Array<string | number> = [];
+        for (const field of seqFields) {
+            const value = (data as Record<string, unknown>)[field];
+            if (typeof value === "number" || typeof value === "string") {
+                candidates.push(value);
+            }
+        }
+        return candidates;
+    }
+
     private async sendGroupHistoryFlag(groupId: string): Promise<string | number | null> {
         const payload = await this.request<unknown>("send_group_msg", {
             group_id: toOneBotId(groupId),
-            message: [
-                {
-                    type: "text",
-                    data: {
-                        text: this.historyFlagMessage,
-                    },
-                },
-            ],
+            message: this.historyFlagMessage,
         });
 
         return this.parseMessageId(payload);
+    }
+
+    private async getMsg(messageId: string | number): Promise<OneBotGetMsgData | null> {
+        try {
+            const data = await this.request<unknown>("get_msg", {
+                message_id: toOneBotId(messageId),
+            });
+            return data && typeof data === "object" ? (data as OneBotGetMsgData) : null;
+        } catch (error) {
+            logger.warn(`get_msg failed for message_id=${String(messageId)}: ${String(error)}`);
+            return null;
+        }
+    }
+
+    private dedupeIdCandidates(values: Array<string | number>): Array<string | number> {
+        const seen = new Set<string>();
+        const out: Array<string | number> = [];
+        for (const value of values) {
+            const key = String(value);
+            if (seen.has(key)) {
+                continue;
+            }
+            seen.add(key);
+            out.push(value);
+        }
+        return out;
     }
 
     private normalizeGroupHistoryData(data: unknown): OneBotMessage[] {
@@ -244,12 +286,20 @@ class OneBotService {
 
         const attempts: Array<Record<string, unknown>> = [];
         if (flagMessageId !== null) {
-            attempts.push({
-                group_id,
-                message_seq: toOneBotId(flagMessageId),
-                count: this.historyCount,
-                reverse_order: true,
-            });
+            const candidates: Array<string | number> = [flagMessageId];
+            const msgData = await this.getMsg(flagMessageId);
+            if (msgData) {
+                candidates.push(...this.parseMessageSeqCandidates(msgData));
+            }
+
+            for (const seq of this.dedupeIdCandidates(candidates)) {
+                attempts.push({
+                    group_id,
+                    message_seq: toOneBotId(seq),
+                    count: this.historyCount,
+                    reverse_order: true,
+                });
+            }
         }
 
         // Fallback for implementations that support no message_seq.
