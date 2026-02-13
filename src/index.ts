@@ -13,7 +13,7 @@ const app: express.Express = express();
 const elysia = new Elysia();
 
 const logger = new Logger("app") as LoggerType;
-logger.info("Hello from Ampex!")
+logger.info("Hello from Amepx!")
 
 elysia
   .use(adminPanelRouter)

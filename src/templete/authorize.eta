@@ -18,78 +18,79 @@
     <title>Authorize Access</title>
     <style>
       :root {
-        --bg: #ebebeb;
-        --surface: #ffffff;
-        --surface-soft: #f2f2f2;
-        --text: #111111;
-        --muted: #616161;
-        --line: #cccccc;
-        --accent: #171717;
+        --bg: #e3e8f4;
+        --text: #111a2f;
+        --muted: #5d6c8c;
+        --line: #bcc9e3;
+        --surface: #f8fbff;
+        --surface-soft: #edf3ff;
+        --accent: #2a5ec8;
+        --accent-2: #1d469e;
         --accent-ink: #ffffff;
-        --page-gap: clamp(10px, 1.8vw, 22px);
-        --page-max: 100%;
       }
 
       * {
         box-sizing: border-box;
       }
 
+      html,
       body {
         margin: 0;
-        min-height: 100vh;
+        padding: 0;
+        width: 100%;
+        height: 100%;
         background:
           radial-gradient(980px 460px at 5% -5%, #ffffff 0%, transparent 62%),
-          radial-gradient(980px 520px at 100% -18%, #d5d5d5 0%, transparent 64%),
+          radial-gradient(980px 520px at 100% -18%, rgba(93, 128, 215, 0.22) 0%, transparent 64%),
           var(--bg);
         color: var(--text);
         font-family: "IBM Plex Sans", "Noto Sans SC", "PingFang SC", sans-serif;
-        font-weight: 400;
-        padding: var(--page-gap);
+        font-weight: 500;
       }
 
       .page {
         width: 100%;
-        max-width: var(--page-max);
-        min-height: calc(100vh - (var(--page-gap) * 2));
-        margin: 0 auto;
+        height: 100%;
       }
 
       .card {
-        background: var(--surface);
-        border: 1px solid var(--line);
-        border-radius: 22px;
-        box-shadow: 0 16px 36px rgba(0, 0, 0, 0.16);
-        min-height: 100%;
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
+        width: 100%;
+        height: 100%;
+        display: grid;
+        grid-template-columns: minmax(340px, 40%) minmax(0, 1fr);
+        background: rgba(248, 251, 255, 0.9);
       }
 
-      .hero {
-        padding: 22px 24px;
-        border-bottom: 1px solid var(--line);
-        background: linear-gradient(160deg, #ffffff, #f2f2f2 60%);
+      .left-pane {
+        min-width: 0;
+        padding: clamp(18px, 2.3vw, 34px);
+        border-right: 1px solid var(--line);
+        background: linear-gradient(170deg, rgba(245, 249, 255, 0.96), rgba(232, 240, 255, 0.9));
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        overflow-y: auto;
       }
 
       .app {
         display: flex;
         align-items: center;
-        gap: 14px;
+        gap: 12px;
       }
 
       .avatar {
-        width: 56px;
-        height: 56px;
-        border-radius: 16px;
+        width: 60px;
+        height: 60px;
+        border-radius: 15px;
         object-fit: cover;
-        border: 1px solid #c8c8c8;
-        background: #efefef;
+        border: 1px solid #adbfeb;
+        background: #eff4ff;
       }
 
       .name {
         margin: 0;
-        font-size: clamp(28px, 2.8vw, 38px);
-        line-height: 1.2;
+        font-size: clamp(26px, 3.1vw, 40px);
+        line-height: 1.1;
         letter-spacing: 0.01em;
         font-weight: 700;
       }
@@ -97,83 +98,181 @@
       .desc {
         margin: 3px 0 0;
         color: var(--muted);
-        font-size: 15px;
+        font-size: 14px;
+        line-height: 1.55;
       }
 
-      .content {
-        padding: 22px 24px 26px;
-        flex: 1;
-        display: flex;
-        flex-direction: column;
+      .block {
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.88);
+        padding: 12px;
       }
 
-      .section-title {
-        margin: 0 0 10px;
-        font-size: 17px;
+      .block-title {
+        margin: 0;
+        font-size: 13px;
         font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: #3d4f7b;
       }
 
       .scope-grid {
+        margin-top: 10px;
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 10px;
-        margin-bottom: 18px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
       }
 
       .scope-item {
         border: 1px solid var(--line);
-        border-radius: 12px;
+        border-radius: 11px;
         background: var(--surface-soft);
-        padding: 10px;
+        padding: 8px 9px;
       }
 
       .scope-name {
         margin: 0;
         font-size: 13px;
         font-weight: 700;
-        color: #111111;
+        color: #17233f;
       }
 
       .scope-desc {
-        margin: 4px 0 0;
+        margin: 3px 0 0;
         color: var(--muted);
-        font-size: 13px;
+        font-size: 12px;
         line-height: 1.5;
       }
 
-      .code-box {
+      .context-list {
+        margin-top: 10px;
+        display: grid;
+        gap: 8px;
+      }
+
+      .context-row {
+        display: grid;
+        grid-template-columns: 104px 1fr;
+        gap: 8px;
+        align-items: start;
+      }
+
+      .context-key {
+        margin: 0;
+        font-size: 12px;
+        color: #3e4f79;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+      }
+
+      .context-value {
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.45;
+        color: #253352;
+        word-break: break-all;
+      }
+
+      .mono {
+        font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+      }
+
+      .right-pane {
+        min-width: 0;
+        padding: clamp(18px, 2.7vw, 38px);
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        overflow-y: auto;
+        background: linear-gradient(180deg, rgba(252, 254, 255, 0.98), rgba(246, 250, 255, 0.94));
+      }
+
+      .headline {
+        margin: 0;
+        font-size: clamp(30px, 4.6vw, 56px);
+        font-weight: 700;
+        line-height: 1.05;
+        letter-spacing: 0.01em;
+      }
+
+      .subline {
+        margin: 4px 0 0;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.6;
+      }
+
+      .subline code {
+        font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+        padding: 1px 5px;
+        border-radius: 999px;
         border: 1px solid var(--line);
-        border-radius: 14px;
-        padding: 18px 14px;
-        background: #fafafa;
-        margin: 4px 0 14px;
+        background: #eef3ff;
+        color: #294c95;
+        font-size: 12px;
+      }
+
+      .code-box {
+        border: 1px solid #abc0ee;
+        border-radius: 16px;
+        padding: 14px 12px;
+        background: linear-gradient(160deg, #f4f8ff, #e9f0ff 70%);
       }
 
       .code-label {
         margin: 0 0 8px;
-        color: var(--muted);
-        font-size: 13px;
+        color: #3e4f79;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
       }
 
       .code {
         margin: 0;
         text-align: center;
         font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Consolas, monospace;
-        letter-spacing: 0.22em;
-        font-size: clamp(36px, 5.6vw, 78px);
-        font-weight: 600;
+        letter-spacing: 0.2em;
+        font-size: clamp(30px, 6.1vw, 88px);
+        font-weight: 700;
       }
 
-      .tip {
-        margin: 0 0 16px;
-        font-size: 14px;
-        line-height: 1.7;
-        color: #242424;
+      .steps {
+        margin: 2px 0 0;
+        display: grid;
+        gap: 8px;
       }
 
-      .group {
-        font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Consolas, monospace;
-        font-weight: 600;
+      .step {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: #f9fbff;
+        padding: 9px 10px;
+        display: grid;
+        grid-template-columns: 20px 1fr;
+        gap: 8px;
+        align-items: start;
+      }
+
+      .step-index {
+        margin: 0;
+        width: 20px;
+        height: 20px;
+        border-radius: 999px;
+        display: grid;
+        place-items: center;
+        color: #fff;
+        font-size: 11px;
+        font-weight: 700;
+        background: linear-gradient(140deg, var(--accent), var(--accent-2));
+      }
+
+      .step-text {
+        margin: 0;
+        font-size: 13px;
+        line-height: 1.55;
+        color: #2b3b5d;
       }
 
       .actions {
@@ -181,49 +280,75 @@
         flex-wrap: wrap;
         align-items: center;
         gap: 10px;
-        margin-top: auto;
       }
 
       .finish {
-        border: 1px solid #000;
-        border-radius: 12px;
-        padding: 11px 20px;
-        font-size: 15px;
+        border: 1px solid var(--accent-2);
+        border-radius: 11px;
+        padding: 10px 16px;
+        font-size: 14px;
         font-weight: 700;
         color: var(--accent-ink);
-        background: linear-gradient(140deg, #373737, #101010);
+        background: linear-gradient(140deg, var(--accent), var(--accent-2));
         cursor: pointer;
       }
 
       .finish:disabled {
-        opacity: 0.6;
+        opacity: 0.62;
         cursor: not-allowed;
       }
 
       .status {
         margin: 0;
         color: var(--muted);
-        font-size: 14px;
+        font-size: 13px;
+        line-height: 1.5;
+        flex: 1;
       }
 
-      @media (max-width: 980px) {
-        .scope-grid {
-          grid-template-columns: repeat(2, minmax(0, 1fr));
+      .note {
+        margin: 0;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.6;
+      }
+
+      @media (max-width: 1080px) {
+        .card {
+          grid-template-columns: 1fr;
+          height: auto;
+          min-height: 100%;
+        }
+
+        .left-pane {
+          border-right: 0;
+          border-bottom: 1px solid var(--line);
         }
       }
 
       @media (max-width: 760px) {
+        body {
+          height: auto;
+          min-height: 100%;
+        }
+
+        .page,
+        .card {
+          height: auto;
+          min-height: 100vh;
+        }
+
         .scope-grid {
           grid-template-columns: 1fr;
         }
 
-        .hero,
-        .content {
-          padding: 16px;
+        .context-row {
+          grid-template-columns: 1fr;
+          gap: 2px;
         }
 
-        .name {
-          font-size: 24px;
+        .headline {
+          font-size: clamp(26px, 10vw, 42px);
         }
       }
     </style>
@@ -237,7 +362,7 @@
       data-scopes="<%= SCOPES %>"
     >
       <section class="card">
-        <header class="hero">
+        <aside class="left-pane">
           <div class="app">
             <img class="avatar" src="<%= CLIENTPICTURE %>" alt="<%= CLIENTNAME %> logo" />
             <div>
@@ -245,26 +370,68 @@
               <p class="desc"><%= CLIENT_DESCRIPTION %></p>
             </div>
           </div>
-        </header>
 
-        <div class="content">
-          <h2 class="section-title">该应用将请求以下权限</h2>
-          <div id="scope-grid" class="scope-grid"></div>
+          <section class="block">
+            <h2 class="block-title">Requested Scopes</h2>
+            <div id="scope-grid" class="scope-grid"></div>
+          </section>
+
+          <section class="block">
+            <h2 class="block-title">Authorization Context</h2>
+            <div class="context-list">
+              <div class="context-row">
+                <p class="context-key">Group</p>
+                <p class="context-value mono"><%= GROUP_ID %></p>
+              </div>
+              <div class="context-row">
+                <p class="context-key">Request ID</p>
+                <p class="context-value mono"><%= REQUEST_ID || "-" %></p>
+              </div>
+              <div class="context-row">
+                <p class="context-key">Redirect URI</p>
+                <p class="context-value mono"><%= REDIRECT_URI || "-" %></p>
+              </div>
+              <div class="context-row">
+                <p class="context-key">State</p>
+                <p class="context-value mono"><%= STATE || "-" %></p>
+              </div>
+            </div>
+          </section>
+        </aside>
+
+        <section class="right-pane">
+          <h2 class="headline">完成 OneBot 群组验证</h2>
+          <p class="subline">发送授权代码到指定群，验证成功后页面会自动跳转到回调地址并附带 <code>code</code> 与 <code>state</code>。</p>
 
           <div class="code-box">
-            <p class="code-label">授权代码</p>
+            <p class="code-label">Authorization Code</p>
             <p class="code"><%= CODE %></p>
           </div>
 
-          <p class="tip">
-            请将上方代码发送到群 <span class="group"><%= GROUP_ID %></span>，完成后点击下方按钮继续。
-          </p>
+          <section class="steps">
+            <article class="step">
+              <p class="step-index">1</p>
+              <p class="step-text">
+                将上面的授权代码发送到群 <span class="mono"><%= GROUP_ID %></span>。
+              </p>
+            </article>
+            <article class="step">
+              <p class="step-index">2</p>
+              <p class="step-text">点击“完成并继续”，服务端将校验群历史中的授权消息。</p>
+            </article>
+            <article class="step">
+              <p class="step-index">3</p>
+              <p class="step-text">校验通过后自动跳转到客户端回调地址，完成 OAuth 授权流程。</p>
+            </article>
+          </section>
 
           <div class="actions">
             <button id="finish-btn" class="finish" type="button">完成并继续</button>
             <p id="status-text" class="status"></p>
           </div>
-        </div>
+
+          <p class="note">若长时间未跳转，请确认你发送的代码与当前页面显示一致，并且应用回调地址配置正确。</p>
+        </section>
       </section>
     </main>
 
@@ -340,7 +507,7 @@
 
         function setStatus(text, isError) {
           statusText.textContent = text || "";
-          statusText.style.color = isError ? "#000000" : "#666666";
+          statusText.style.color = isError ? "#8a2432" : "#355082";
         }
 
         async function finish() {
