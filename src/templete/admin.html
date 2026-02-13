@@ -123,7 +123,19 @@
       }
 
       .select {
-        border-radius: 100px;
+        border-radius: 14px;
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        padding-right: 36px;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23314875' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        background-size: 12px 8px;
+      }
+
+      .select::-ms-expand {
+        display: none;
       }
 
       .area {
@@ -638,8 +650,10 @@
       }
 
       .toolbar .btn-primary {
-        padding: 6px 11px;
-        font-size: 13px;
+        border-color: #6d90d8;
+        background: linear-gradient(140deg, #7ea3ea, #5b84d7);
+        padding: 5px 10px;
+        font-size: 12px;
         border-radius: 12px;
       }
 
