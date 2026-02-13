@@ -19,14 +19,15 @@
     <style>
       :root {
         --bg: #e3e8f4;
-        --text: #111a2f;
-        --muted: #5d6c8c;
+        --surface: rgba(251, 253, 255, 0.94);
+        --surface-soft: #eef3ff;
+        --text: #131c31;
+        --muted: #5b6987;
         --line: #bcc9e3;
-        --surface: #f8fbff;
-        --surface-soft: #edf3ff;
         --accent: #2a5ec8;
         --accent-2: #1d469e;
-        --accent-ink: #ffffff;
+        --danger: #8a2432;
+        --page-pad: clamp(10px, 1.6vw, 18px);
       }
 
       * {
@@ -38,38 +39,45 @@
         margin: 0;
         padding: 0;
         width: 100%;
-        height: 100%;
+        min-height: 100%;
+      }
+
+      body {
+        min-height: 100vh;
         background:
           radial-gradient(980px 460px at 5% -5%, #ffffff 0%, transparent 62%),
-          radial-gradient(980px 520px at 100% -18%, rgba(93, 128, 215, 0.22) 0%, transparent 64%),
+          radial-gradient(980px 520px at 100% -18%, rgba(93, 128, 215, 0.2) 0%, transparent 64%),
           var(--bg);
         color: var(--text);
         font-family: "IBM Plex Sans", "Noto Sans SC", "PingFang SC", sans-serif;
         font-weight: 500;
+        padding: var(--page-pad);
+        display: grid;
+        place-items: center;
       }
 
       .page {
-        width: 100%;
-        height: 100%;
+        width: min(920px, 100%);
+        height: calc(100vh - (var(--page-pad) * 2));
+        max-height: calc(100vh - (var(--page-pad) * 2));
       }
 
       .card {
-        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        background: var(--surface);
+        box-shadow:
+          0 18px 36px rgba(29, 60, 124, 0.16),
+          inset 0 0 0 1px rgba(255, 255, 255, 0.5);
         height: 100%;
-        display: grid;
-        grid-template-columns: minmax(340px, 40%) minmax(0, 1fr);
-        background: rgba(248, 251, 255, 0.9);
+        max-height: 100%;
+        overflow: auto;
       }
 
-      .left-pane {
-        min-width: 0;
-        padding: clamp(18px, 2.3vw, 34px);
-        border-right: 1px solid var(--line);
-        background: linear-gradient(170deg, rgba(245, 249, 255, 0.96), rgba(232, 240, 255, 0.9));
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-        overflow-y: auto;
+      .top {
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--line);
+        background: linear-gradient(165deg, rgba(255, 255, 255, 0.95), rgba(236, 244, 255, 0.9));
       }
 
       .app {
@@ -79,64 +87,110 @@
       }
 
       .avatar {
-        width: 60px;
-        height: 60px;
-        border-radius: 15px;
+        width: 52px;
+        height: 52px;
+        border-radius: 14px;
         object-fit: cover;
-        border: 1px solid #adbfeb;
-        background: #eff4ff;
+        border: 1px solid #abc0ee;
+        background: var(--surface-soft);
       }
 
       .name {
         margin: 0;
-        font-size: clamp(26px, 3.1vw, 40px);
-        line-height: 1.1;
-        letter-spacing: 0.01em;
+        font-size: clamp(22px, 3.2vw, 30px);
+        line-height: 1.15;
         font-weight: 700;
       }
 
       .desc {
         margin: 3px 0 0;
         color: var(--muted);
-        font-size: 14px;
+        font-size: 13px;
         line-height: 1.55;
+      }
+
+      .lead {
+        margin: 8px 0 0;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.55;
+      }
+
+      .main {
+        padding: 12px;
+        display: grid;
+        gap: 8px;
       }
 
       .block {
         border: 1px solid var(--line);
-        border-radius: 16px;
-        background: rgba(255, 255, 255, 0.88);
-        padding: 12px;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.86);
+        padding: 10px 11px;
       }
 
       .block-title {
         margin: 0;
-        font-size: 13px;
-        font-weight: 700;
-        letter-spacing: 0.04em;
+        font-size: 12px;
+        letter-spacing: 0.05em;
         text-transform: uppercase;
-        color: #3d4f7b;
+        font-weight: 700;
+        color: #3f5078;
+      }
+
+      .code-box {
+        margin-top: 8px;
+        border: 1px solid #adc2ef;
+        border-radius: 12px;
+        background: linear-gradient(160deg, #f3f8ff, #e8efff 72%);
+        padding: 10px;
+      }
+
+      .code {
+        margin: 0;
+        text-align: center;
+        font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+        font-size: clamp(30px, 6vw, 54px);
+        letter-spacing: 0.16em;
+        font-weight: 700;
+        line-height: 1.15;
+      }
+
+      .tip {
+        margin: 8px 0 0;
+        color: #2d3d61;
+        font-size: 13px;
+        line-height: 1.55;
+      }
+
+      .mono {
+        font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Consolas, monospace;
       }
 
       .scope-grid {
-        margin-top: 10px;
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        margin-top: 8px;
+        display: flex;
+        flex-wrap: nowrap;
         gap: 8px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding-bottom: 2px;
       }
 
       .scope-item {
         border: 1px solid var(--line);
-        border-radius: 11px;
+        border-radius: 10px;
         background: var(--surface-soft);
-        padding: 8px 9px;
+        padding: 8px;
+        min-width: 260px;
+        flex: 1 0 260px;
       }
 
       .scope-name {
         margin: 0;
-        font-size: 13px;
+        font-size: 12px;
         font-weight: 700;
-        color: #17233f;
+        color: #192645;
       }
 
       .scope-desc {
@@ -147,148 +201,60 @@
       }
 
       .context-list {
-        margin-top: 10px;
+        margin-top: 8px;
         display: grid;
-        gap: 8px;
+        gap: 6px;
       }
 
       .context-row {
         display: grid;
-        grid-template-columns: 104px 1fr;
+        grid-template-columns: 106px 1fr;
         gap: 8px;
-        align-items: start;
       }
 
       .context-key {
         margin: 0;
-        font-size: 12px;
-        color: #3e4f79;
+        font-size: 11px;
         text-transform: uppercase;
-        letter-spacing: 0.03em;
+        letter-spacing: 0.04em;
+        color: #4a5b84;
       }
 
       .context-value {
         margin: 0;
         font-size: 12px;
         line-height: 1.45;
-        color: #253352;
+        color: #2b3a5c;
         word-break: break-all;
       }
 
-      .mono {
-        font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Consolas, monospace;
-      }
-
-      .right-pane {
-        min-width: 0;
-        padding: clamp(18px, 2.7vw, 38px);
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        overflow-y: auto;
-        background: linear-gradient(180deg, rgba(252, 254, 255, 0.98), rgba(246, 250, 255, 0.94));
-      }
-
-      .headline {
-        margin: 0;
-        font-size: clamp(30px, 4.6vw, 56px);
-        font-weight: 700;
-        line-height: 1.05;
-        letter-spacing: 0.01em;
-      }
-
-      .subline {
-        margin: 4px 0 0;
-        color: var(--muted);
-        font-size: 14px;
-        line-height: 1.6;
-      }
-
-      .subline code {
-        font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Consolas, monospace;
-        padding: 1px 5px;
-        border-radius: 999px;
-        border: 1px solid var(--line);
-        background: #eef3ff;
-        color: #294c95;
-        font-size: 12px;
-      }
-
-      .code-box {
-        border: 1px solid #abc0ee;
-        border-radius: 16px;
-        padding: 14px 12px;
-        background: linear-gradient(160deg, #f4f8ff, #e9f0ff 70%);
-      }
-
-      .code-label {
-        margin: 0 0 8px;
-        color: #3e4f79;
-        font-size: 12px;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-      }
-
-      .code {
-        margin: 0;
-        text-align: center;
-        font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Consolas, monospace;
-        letter-spacing: 0.2em;
-        font-size: clamp(30px, 6.1vw, 88px);
-        font-weight: 700;
-      }
-
       .steps {
-        margin: 2px 0 0;
+        margin: 8px 0 0;
+        padding-left: 18px;
         display: grid;
-        gap: 8px;
+        gap: 6px;
       }
 
-      .step {
-        border: 1px solid var(--line);
-        border-radius: 12px;
-        background: #f9fbff;
-        padding: 9px 10px;
-        display: grid;
-        grid-template-columns: 20px 1fr;
-        gap: 8px;
-        align-items: start;
-      }
-
-      .step-index {
-        margin: 0;
-        width: 20px;
-        height: 20px;
-        border-radius: 999px;
-        display: grid;
-        place-items: center;
-        color: #fff;
-        font-size: 11px;
-        font-weight: 700;
-        background: linear-gradient(140deg, var(--accent), var(--accent-2));
-      }
-
-      .step-text {
-        margin: 0;
-        font-size: 13px;
-        line-height: 1.55;
-        color: #2b3b5d;
+      .steps li {
+        color: #2d3f66;
+        font-size: 12px;
+        line-height: 1.52;
       }
 
       .actions {
         display: flex;
-        flex-wrap: wrap;
         align-items: center;
         gap: 10px;
+        flex-wrap: wrap;
       }
 
       .finish {
         border: 1px solid var(--accent-2);
-        border-radius: 11px;
-        padding: 10px 16px;
-        font-size: 14px;
+        border-radius: 10px;
+        padding: 8px 14px;
+        font-size: 13px;
         font-weight: 700;
-        color: var(--accent-ink);
+        color: #fff;
         background: linear-gradient(140deg, var(--accent), var(--accent-2));
         cursor: pointer;
       }
@@ -300,55 +266,32 @@
 
       .status {
         margin: 0;
+        min-height: 1.3em;
         color: var(--muted);
-        font-size: 13px;
-        line-height: 1.5;
-        flex: 1;
+        font-size: 12px;
+        line-height: 1.45;
       }
 
       .note {
         margin: 0;
         color: var(--muted);
-        font-size: 12px;
-        line-height: 1.6;
+        font-size: 11px;
+        line-height: 1.55;
       }
 
-      @media (max-width: 1080px) {
-        .card {
-          grid-template-columns: 1fr;
-          height: auto;
-          min-height: 100%;
-        }
-
-        .left-pane {
-          border-right: 0;
-          border-bottom: 1px solid var(--line);
-        }
-      }
-
-      @media (max-width: 760px) {
+      @media (max-width: 720px) {
         body {
-          height: auto;
-          min-height: 100%;
+          padding: 8px;
         }
 
-        .page,
-        .card {
-          height: auto;
-          min-height: 100vh;
-        }
-
-        .scope-grid {
-          grid-template-columns: 1fr;
+        .top,
+        .main {
+          padding: 10px;
         }
 
         .context-row {
           grid-template-columns: 1fr;
           gap: 2px;
-        }
-
-        .headline {
-          font-size: clamp(26px, 10vw, 42px);
         }
       }
     </style>
@@ -362,7 +305,7 @@
       data-scopes="<%= SCOPES %>"
     >
       <section class="card">
-        <aside class="left-pane">
+        <header class="top">
           <div class="app">
             <img class="avatar" src="<%= CLIENTPICTURE %>" alt="<%= CLIENTNAME %> logo" />
             <div>
@@ -370,6 +313,17 @@
               <p class="desc"><%= CLIENT_DESCRIPTION %></p>
             </div>
           </div>
+          <p class="lead">该应用正在请求授权。完成下方 OneBot 验证后，将跳转回客户端回调地址继续流程。</p>
+        </header>
+
+        <section class="main">
+          <section class="block">
+            <h2 class="block-title">Authorization Code</h2>
+            <div class="code-box">
+              <p class="code"><%= CODE %></p>
+            </div>
+            <p class="tip">请将上面的授权代码发送到群 <span class="mono"><%= GROUP_ID %></span>，然后点击“完成并继续”。</p>
+          </section>
 
           <section class="block">
             <h2 class="block-title">Requested Scopes</h2>
@@ -395,34 +349,20 @@
                 <p class="context-key">State</p>
                 <p class="context-value mono"><%= STATE_DISPLAY %></p>
               </div>
+              <div class="context-row">
+                <p class="context-key">Scope</p>
+                <p class="context-value mono"><%= SCOPES_DISPLAY %></p>
+              </div>
             </div>
           </section>
-        </aside>
 
-        <section class="right-pane">
-          <h2 class="headline">完成 OneBot 群组验证</h2>
-          <p class="subline">发送授权代码到指定群，验证成功后页面会自动跳转到回调地址并附带 <code>code</code> 与 <code>state</code>。</p>
-
-          <div class="code-box">
-            <p class="code-label">Authorization Code</p>
-            <p class="code"><%= CODE %></p>
-          </div>
-
-          <section class="steps">
-            <article class="step">
-              <p class="step-index">1</p>
-              <p class="step-text">
-                将上面的授权代码发送到群 <span class="mono"><%= GROUP_ID %></span>。
-              </p>
-            </article>
-            <article class="step">
-              <p class="step-index">2</p>
-              <p class="step-text">点击“完成并继续”，服务端将校验群历史中的授权消息。</p>
-            </article>
-            <article class="step">
-              <p class="step-index">3</p>
-              <p class="step-text">校验通过后自动跳转到客户端回调地址，完成 OAuth 授权流程。</p>
-            </article>
+          <section class="block">
+            <h2 class="block-title">验证流程</h2>
+            <ol class="steps">
+              <li>在目标群内发送本页显示的授权代码。</li>
+              <li>点击下方“完成并继续”触发服务器校验。</li>
+              <li>校验通过后将自动重定向到客户端回调地址，携带 <span class="mono">code</span> 与 <span class="mono">state</span>。</li>
+            </ol>
           </section>
 
           <div class="actions">
@@ -430,7 +370,7 @@
             <p id="status-text" class="status"></p>
           </div>
 
-          <p class="note">若长时间未跳转，请确认你发送的代码与当前页面显示一致，并且应用回调地址配置正确。</p>
+          <p class="note">如果未跳转，请确认群消息中确实发送了当前页面授权码，并检查客户端回调地址配置。</p>
         </section>
       </section>
     </main>
@@ -507,7 +447,7 @@
 
         function setStatus(text, isError) {
           statusText.textContent = text || "";
-          statusText.style.color = isError ? "#8a2432" : "#355082";
+          statusText.style.color = isError ? "var(--danger)" : "#355082";
         }
 
         async function finish() {

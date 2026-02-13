@@ -82,6 +82,78 @@ async function generateUniqueCode(): Promise<string> {
 }
 
 export const oauthAuthorizeRouter = new Elysia({ prefix: "/oauth" }).get(
+    "/authorize/demo",
+    async ({ query, request }) => {
+        const requestUrl = new URL(request.url);
+        const fallbackRedirect = `${requestUrl.origin}/oauth/oidc`;
+
+        const code = String(query.code || "935420");
+        const clientName = String(query.client_name || "AmethystAPI");
+        const clientPicture = String(
+            query.client_picture || "https://placehold.co/96x96/png?text=A",
+        );
+        const clientDescription = String(
+            query.client_description || "Amepx OAuth2/OIDC Demo Client",
+        );
+        const groupId = String(query.group_id || "1039716984");
+        const requestId = String(
+            query.request_id || "demo_request_5a9e807b177e5bf373d7cee37604747",
+        );
+        const redirectUri = String(query.redirect_uri || fallbackRedirect);
+        const state = String(query.state || "demo_state_XY12");
+        const scopes = String(query.scope || "openid profile email");
+
+        const html = await renderAuthorizeTemplate({
+            REQUEST_ID: requestId,
+            REQUEST_ID_DISPLAY: requestId || "-",
+            CODE: code,
+            CLIENTNAME: clientName,
+            CLIENTPICTURE: clientPicture,
+            CLIENT_DESCRIPTION: clientDescription,
+            GROUP_ID: groupId,
+            REDIRECT_URI: redirectUri,
+            REDIRECT_URI_DISPLAY: redirectUri || "-",
+            STATE: state,
+            STATE_DISPLAY: state || "-",
+            SCOPES: scopes,
+            SCOPES_DISPLAY: scopes || "-",
+        });
+
+        return new Response(html, {
+            headers: {
+                "content-type": "text/html; charset=utf-8",
+            },
+        });
+    },
+    {
+        query: t.Object({
+            code: t.Optional(t.String()),
+            client_name: t.Optional(t.String()),
+            client_picture: t.Optional(t.String()),
+            client_description: t.Optional(t.String()),
+            group_id: t.Optional(t.String()),
+            request_id: t.Optional(t.String()),
+            redirect_uri: t.Optional(t.String()),
+            state: t.Optional(t.String()),
+            scope: t.Optional(t.String()),
+        }),
+        response: {
+            200: withDoc(t.String(), {
+                description: "Authorization page demo HTML (mock data).",
+                content: {
+                    "text/html": {
+                        schema: {
+                            type: "string",
+                        },
+                    },
+                },
+                headers: {
+                    "content-type": t.String({ minLength: 1 }),
+                },
+            }),
+        },
+    },
+).get(
     "/authorize",
     async ({ query }) => {
         if (query.response_type !== "code") {
@@ -171,6 +243,7 @@ export const oauthAuthorizeRouter = new Elysia({ prefix: "/oauth" }).get(
             STATE: query.state || "",
             STATE_DISPLAY: query.state || "-",
             SCOPES: scope.join(" "),
+            SCOPES_DISPLAY: scope.join(" ") || "-",
         });
 
         return new Response(html, {
