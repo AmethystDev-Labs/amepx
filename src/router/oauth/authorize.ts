@@ -160,13 +160,16 @@ export const oauthAuthorizeRouter = new Elysia({ prefix: "/oauth" }).get(
 
         const html = await renderAuthorizeTemplate({
             REQUEST_ID: requestId,
+            REQUEST_ID_DISPLAY: requestId || "-",
             CODE: code,
             CLIENTNAME: client.name,
             CLIENTPICTURE: client.picture || "https://placehold.co/96x96/png",
             CLIENT_DESCRIPTION: client.description || "No description",
             GROUP_ID: String(groupId),
             REDIRECT_URI: redirectUri,
+            REDIRECT_URI_DISPLAY: redirectUri || "-",
             STATE: query.state || "",
+            STATE_DISPLAY: query.state || "-",
             SCOPES: scope.join(" "),
         });
 

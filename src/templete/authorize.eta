@@ -385,15 +385,15 @@
               </div>
               <div class="context-row">
                 <p class="context-key">Request ID</p>
-                <p class="context-value mono"><%= REQUEST_ID || "-" %></p>
+                <p class="context-value mono"><%= REQUEST_ID_DISPLAY %></p>
               </div>
               <div class="context-row">
                 <p class="context-key">Redirect URI</p>
-                <p class="context-value mono"><%= REDIRECT_URI || "-" %></p>
+                <p class="context-value mono"><%= REDIRECT_URI_DISPLAY %></p>
               </div>
               <div class="context-row">
                 <p class="context-key">State</p>
-                <p class="context-value mono"><%= STATE || "-" %></p>
+                <p class="context-value mono"><%= STATE_DISPLAY %></p>
               </div>
             </div>
           </section>
