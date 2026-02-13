@@ -6,27 +6,26 @@
     <title>Amepx Admin Console</title>
     <style>
       :root {
-        --bg: #f4f4ef;
-        --ink: #0f1e1c;
-        --muted: #556964;
-        --line: #d5dfdb;
-        --line-strong: #b8c8c2;
+        --bg: #e3e9f5;
+        --ink: #151d2d;
+        --muted: #5e6b84;
+        --line: #bfcae0;
+        --line-strong: #8f9dbb;
         --surface: #ffffff;
-        --surface-soft: #f7fbf9;
-        --brand: #0f8a64;
-        --brand-2: #116b4e;
-        --warn: #9b5b1d;
-        --danger: #af2f2f;
-        --nav-bg: #122720;
-        --nav-ink: #dcece6;
-        --nav-muted: #8ca39b;
+        --surface-soft: #eef3ff;
+        --brand: #2a5ec8;
+        --brand-2: #1e469f;
+        --warn: #34425d;
+        --danger: #22304d;
+        --nav-bg: #182846;
+        --nav-ink: #f4f7ff;
+        --nav-muted: #a8b6d1;
         --radius-xl: 22px;
         --radius-lg: 14px;
         --radius-md: 10px;
-        --layout-width: 1440px;
+        --app-pad: clamp(10px, 1.5vw, 20px);
         --app-gap: 14px;
-        --sidebar-width: 220px;
-        --workspace-width: calc(var(--layout-width) - var(--sidebar-width) - var(--app-gap));
+        --sidebar-width: clamp(220px, 20vw, 300px);
         --login-card-width: 760px;
       }
 
@@ -42,14 +41,13 @@
 
       body {
         min-height: 100vh;
-        min-width: var(--layout-width);
         color: var(--ink);
         font-family: "IBM Plex Sans", "Noto Sans SC", "PingFang SC", "Segoe UI", sans-serif;
         background:
-          radial-gradient(1200px 540px at -8% -18%, #d8f5e8 0%, transparent 62%),
-          radial-gradient(980px 520px at 108% -16%, #e7edf8 0%, transparent 64%),
+          radial-gradient(1200px 540px at -8% -18%, #ffffff 0%, transparent 62%),
+          radial-gradient(980px 520px at 108% -16%, rgba(62, 107, 211, 0.16) 0%, transparent 64%),
           var(--bg);
-        overflow-x: auto;
+        padding: var(--app-pad);
       }
 
       button,
@@ -79,29 +77,35 @@
 
       .btn:hover {
         transform: translateY(-1px);
-        box-shadow: 0 10px 18px rgba(10, 35, 27, 0.1);
+        box-shadow: 0 10px 18px rgba(0, 0, 0, 0.14);
       }
 
       .btn-primary {
         border-color: var(--brand-2);
         color: #fff;
-        background: linear-gradient(140deg, var(--brand), var(--brand-2));
+        background: linear-gradient(140deg, #3a6dd6, #1f4ba8);
       }
 
       .btn-warn {
-        border-color: #e8ceb6;
-        background: #fff6ed;
+        border-color: #b9c8e6;
+        background: #edf2ff;
         color: var(--warn);
       }
 
       .btn-danger {
-        border-color: #ecc4c4;
-        background: #fff4f4;
+        border-color: #b4c5e8;
+        background: #e8efff;
         color: var(--danger);
       }
 
       .btn-ghost {
-        background: #fff;
+        background: #f4f7ff;
+      }
+
+      .btn-compact {
+        border-radius: 10px;
+        padding: 6px 11px;
+        font-size: 12px;
       }
 
       .field,
@@ -120,23 +124,23 @@
       }
 
       .login-wrap {
-        width: var(--layout-width);
-        min-height: 100vh;
+        width: 100%;
+        min-height: calc(100vh - (var(--app-pad) * 2));
         margin: 0 auto;
         display: grid;
         place-items: center;
       }
 
       .login-card {
-        width: var(--login-card-width);
+        width: min(var(--login-card-width), 100%);
         position: relative;
         overflow: hidden;
         border: 1px solid var(--line);
         border-radius: 28px;
-        background: linear-gradient(160deg, rgba(255, 255, 255, 0.96), rgba(251, 255, 253, 0.88));
+        background: linear-gradient(160deg, rgba(255, 255, 255, 0.96), rgba(232, 240, 255, 0.9));
         backdrop-filter: blur(10px);
         padding: 34px;
-        box-shadow: 0 20px 44px rgba(14, 33, 25, 0.08);
+        box-shadow: 0 18px 38px rgba(12, 24, 52, 0.16);
       }
 
       .login-card::after {
@@ -147,7 +151,7 @@
         top: -140px;
         right: -130px;
         border-radius: 999px;
-        background: radial-gradient(circle at center, rgba(23, 156, 116, 0.24), rgba(23, 156, 116, 0));
+        background: radial-gradient(circle at center, rgba(58, 109, 214, 0.24), rgba(58, 109, 214, 0));
       }
 
       .login-eyebrow {
@@ -178,102 +182,212 @@
         width: min(560px, 100%);
       }
 
-      .login-status {
-        min-height: 1.4em;
-        margin: 0;
-        color: var(--muted);
-        font-size: 14px;
-      }
-
       .app {
-        width: var(--layout-width);
-        height: calc(100vh - 68px);
-        margin: 34px auto;
+        width: 100%;
+        min-height: calc(100vh - (var(--app-pad) * 2));
+        height: calc(100vh - (var(--app-pad) * 2));
+        margin: 0 auto;
         display: grid;
-        grid-template-columns: var(--sidebar-width) var(--workspace-width);
+        grid-template-columns: minmax(220px, var(--sidebar-width)) minmax(0, 1fr);
         gap: var(--app-gap);
         align-items: stretch;
       }
 
       .sidebar {
-        width: var(--sidebar-width);
+        width: auto;
         height: 100%;
-        border: 1px solid #1f3f35;
+        border: 1px solid #263a66;
         border-radius: var(--radius-xl);
-        background: linear-gradient(170deg, #17382d, var(--nav-bg) 65%);
+        background: linear-gradient(180deg, #1a2a4c, #1c2f56 58%, #172746);
         color: var(--nav-ink);
-        padding: 12px;
-        display: grid;
-        grid-template-rows: auto 1fr auto;
+        padding: 14px;
+        display: flex;
+        flex-direction: column;
         gap: 12px;
       }
 
-      .brand p {
+      .brand {
+        border: 1px solid #3a4f82;
+        border-radius: 16px;
+        background: #1f3360;
+        padding: 12px;
+        display: grid;
+        gap: 10px;
+      }
+
+      .brand-top {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .brand-logo {
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        border: 1px solid #6e92dd;
+        display: grid;
+        place-items: center;
+        font-size: 15px;
+        font-weight: 700;
+        background: #476fca;
+        color: #ffffff;
+      }
+
+      .brand-meta {
+        min-width: 0;
+      }
+
+      .brand-kicker {
         margin: 0;
-        color: var(--nav-muted);
-        font-size: 12px;
-        letter-spacing: 0.06em;
+        color: #b6c6e8;
+        font-size: 11px;
+        letter-spacing: 0.08em;
         text-transform: uppercase;
       }
 
-      .brand h2 {
-        margin: 8px 0 0;
-        font-size: 24px;
+      .brand-title {
+        margin: 4px 0 0;
+        font-size: 22px;
         line-height: 1;
+        color: #f8f8f8;
+      }
+
+      .brand-summary {
+        margin: 0;
+        color: #b0c0de;
+        font-size: 12px;
       }
 
       .nav {
         display: grid;
-        gap: 6px;
+        gap: 8px;
+        border: 1px solid #405583;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.06);
+        padding: 10px;
+      }
+
+      .nav-title {
+        margin: 0 0 2px;
+        color: #bcc9e4;
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
       }
 
       .nav-btn {
         width: 100%;
-        border: 1px solid transparent;
+        border: 1px solid #496096;
         border-radius: 12px;
-        background: rgba(255, 255, 255, 0.02);
+        background: #213866;
         color: var(--nav-ink);
-        padding: 8px 10px;
-        display: flex;
-        justify-content: space-between;
+        padding: 9px 10px;
+        display: grid;
+        grid-template-columns: auto 1fr auto;
         align-items: center;
+        text-align: left;
+        gap: 8px;
         cursor: pointer;
         transition: background 0.12s ease, border 0.12s ease;
       }
 
       .nav-btn:hover {
-        background: rgba(255, 255, 255, 0.08);
+        background: #2c477f;
+        border-color: #5f81cb;
       }
 
       .nav-btn.active {
-        border-color: rgba(184, 222, 208, 0.4);
-        background: rgba(148, 213, 188, 0.17);
+        border-color: #9db9f8;
+        background: #f3f7ff;
+        color: #141f35;
+      }
+
+      .nav-icon {
+        width: 22px;
+        height: 22px;
+        border-radius: 7px;
+        border: 1px solid #6a89cd;
+        display: grid;
+        place-items: center;
+        font-size: 10px;
+        font-weight: 700;
+        color: #ecf1ff;
+        background: #335796;
+      }
+
+      .nav-btn.active .nav-icon {
+        border-color: #a8bef1;
+        color: #294784;
+        background: #dee9ff;
+      }
+
+      .nav-copy {
+        display: grid;
+        gap: 2px;
+      }
+
+      .nav-label {
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.01em;
+      }
+
+      .nav-sub {
+        font-size: 11px;
+        color: var(--nav-muted);
+      }
+
+      .nav-btn.active .nav-sub {
+        color: #525f79;
       }
 
       .nav-count {
-        min-width: 28px;
+        min-width: 26px;
         border-radius: 999px;
-        padding: 2px 8px;
+        padding: 1px 8px;
         text-align: center;
-        font-size: 12px;
-        color: #d8eee5;
-        background: rgba(255, 255, 255, 0.08);
+        font-size: 11px;
+        color: #eff3ff;
+        border: 1px solid #6686ca;
+        background: #335690;
+      }
+
+      .nav-btn.active .nav-count {
+        color: #ffffff;
+        border-color: #2a5ec8;
+        background: #2a5ec8;
       }
 
       .sidebar-foot {
-        border-top: 1px solid rgba(195, 223, 211, 0.2);
-        padding-top: 10px;
-        color: var(--nav-muted);
-        font-size: 12px;
+        margin-top: auto;
+        border: 1px solid #415683;
+        border-radius: 12px;
+        background: #20345f;
+        padding: 10px;
         line-height: 1.5;
       }
 
+      .sidebar-foot-title {
+        margin: 0;
+        color: #e0e9ff;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .sidebar-foot-text {
+        margin: 5px 0 0;
+        color: #bac9e6;
+        font-size: 12px;
+      }
+
       .workspace {
-        width: var(--workspace-width);
+        width: auto;
         height: 100%;
         border: 1px solid var(--line);
         border-radius: var(--radius-xl);
-        background: rgba(255, 255, 255, 0.84);
+        background: rgba(248, 251, 255, 0.94);
         backdrop-filter: blur(8px);
         padding: 16px;
         display: flex;
@@ -320,25 +434,25 @@
         padding: 6px 10px;
         font-size: 12px;
         color: var(--muted);
-        background: #fff;
+        background: #f4f7ff;
       }
 
       .sync-chip.ok {
-        color: #0b6f4e;
-        border-color: #b8dfce;
-        background: #eaf8f1;
+        color: #2a4f9d;
+        border-color: #aac0eb;
+        background: #e8f0ff;
       }
 
       .sync-chip.working {
-        color: #215f92;
-        border-color: #b8d4eb;
-        background: #edf5fd;
+        color: #365182;
+        border-color: #b8c9ea;
+        background: #edf3ff;
       }
 
       .sync-chip.error {
-        color: var(--danger);
-        border-color: #efc7c7;
-        background: #fff4f4;
+        color: #2f456f;
+        border-color: #aabadd;
+        background: #e7edfa;
       }
 
       .view {
@@ -351,14 +465,13 @@
       .metric-grid {
         display: grid;
         gap: 12px;
-        grid-template-columns: repeat(4, var(--sidebar-width));
-        justify-content: space-between;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
       }
 
       .metric-card {
         border: 1px solid var(--line);
         border-radius: var(--radius-lg);
-        background: #fff;
+        background: #f7f9ff;
         padding: 14px;
       }
 
@@ -387,7 +500,7 @@
       .panel {
         border: 1px solid var(--line);
         border-radius: var(--radius-lg);
-        background: #fff;
+        background: #f8faff;
         padding: 12px;
       }
 
@@ -490,24 +603,24 @@
         padding: 2px 8px;
         font-size: 12px;
         color: var(--muted);
-        background: #fff;
+        background: #f8faff;
       }
 
       .status-badge.ok {
-        color: #0c6d4d;
-        border-color: #b8dfce;
-        background: #eaf8f1;
+        color: #1f418f;
+        border-color: #9cb7ec;
+        background: #e7efff;
       }
 
       .status-badge.warn {
-        color: #8d541f;
-        border-color: #ebd1b8;
-        background: #fff8ee;
+        color: #28427d;
+        border-color: #adc0eb;
+        background: #edf3ff;
       }
 
       .status-badge.off {
-        color: #647872;
-        background: #f3f6f5;
+        color: #5e6675;
+        background: #eceff5;
       }
 
       .toolbar {
@@ -536,12 +649,12 @@
 
       .scope-pill {
         display: inline-flex;
-        border: 1px solid #bfd3cb;
+        border: 1px solid #a8bbe5;
         border-radius: 999px;
         padding: 1px 7px;
         font-size: 11px;
-        color: #214b3e;
-        background: #eef8f3;
+        color: #224083;
+        background: #eaf0ff;
       }
 
       .token-state {
@@ -553,14 +666,14 @@
       }
 
       .token-state.active {
-        color: #0b6f4d;
-        border-color: #b8dfce;
-        background: #eaf8f1;
+        color: #1f438f;
+        border-color: #9bb7ed;
+        background: #e7efff;
       }
 
       .token-state.inactive {
-        color: #647872;
-        background: #f2f5f4;
+        color: #5f6878;
+        background: #eceff5;
       }
 
       .modal {
@@ -575,7 +688,7 @@
       .modal-backdrop {
         position: absolute;
         inset: 0;
-        background: rgba(8, 21, 17, 0.5);
+        background: rgba(0, 0, 0, 0.56);
         backdrop-filter: blur(2px);
       }
 
@@ -587,7 +700,7 @@
         border: 1px solid var(--line);
         border-radius: var(--radius-xl);
         background: #fff;
-        box-shadow: 0 24px 44px rgba(11, 30, 24, 0.24);
+        box-shadow: 0 24px 44px rgba(0, 0, 0, 0.28);
         padding: 16px;
       }
 
@@ -649,9 +762,9 @@
       .toast {
         border: 1px solid var(--line);
         border-radius: 14px;
-        background: rgba(255, 255, 255, 0.96);
+        background: rgba(255, 255, 255, 0.97);
         backdrop-filter: blur(10px);
-        box-shadow: 0 14px 28px rgba(12, 35, 27, 0.16);
+        box-shadow: 0 14px 28px rgba(0, 0, 0, 0.18);
         display: grid;
         grid-template-columns: 1fr auto;
         gap: 8px;
@@ -667,19 +780,19 @@
       }
 
       .toast.info {
-        border-left: 4px solid #2a7db8;
+        border-left: 4px solid #1f4fba;
       }
 
       .toast.success {
-        border-left: 4px solid #11815d;
+        border-left: 4px solid #2d5fca;
       }
 
       .toast.warn {
-        border-left: 4px solid #9b5b1d;
+        border-left: 4px solid #3e4e7a;
       }
 
       .toast.error {
-        border-left: 4px solid #af2f2f;
+        border-left: 4px solid #1f2a45;
       }
 
       .toast-text {
@@ -694,12 +807,84 @@
         border: 0;
         border-radius: 8px;
         background: transparent;
-        color: #6f837d;
+        color: #666666;
         cursor: pointer;
       }
 
       .toast-close:hover {
-        background: #eef3f1;
+        background: #efefef;
+      }
+
+      @media (max-width: 1200px) {
+        .metric-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .panel-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 980px) {
+        .app {
+          height: auto;
+          min-height: calc(100vh - (var(--app-pad) * 2));
+          grid-template-columns: 1fr;
+        }
+
+        .sidebar {
+          height: auto;
+        }
+
+        .nav {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          align-items: stretch;
+        }
+
+        .nav-title {
+          grid-column: 1 / -1;
+        }
+
+        .workspace {
+          height: auto;
+          min-height: 0;
+        }
+
+        .view {
+          min-height: 400px;
+        }
+      }
+
+      @media (max-width: 720px) {
+        .head {
+          flex-direction: column;
+          align-items: start;
+        }
+
+        .head-actions {
+          width: 100%;
+          justify-content: flex-start;
+        }
+
+        .head-actions .btn {
+          flex: 0 0 auto;
+        }
+
+        .metric-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .toolbar {
+          grid-template-columns: 1fr;
+        }
+
+        .form-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .nav {
+          grid-template-columns: 1fr;
+        }
       }
 
     </style>
@@ -715,7 +900,6 @@
         <div class="login-form">
           <input id="login-token" class="field" type="password" placeholder="ADMIN_KEY / x-admin-key" autocomplete="off" />
           <button id="login-btn" class="btn btn-primary" type="button">验证并进入</button>
-          <p id="login-status" class="login-status"></p>
         </div>
       </section>
     </main>
@@ -723,30 +907,56 @@
     <main id="app-view" class="app hidden">
       <aside class="sidebar">
         <section class="brand">
-          <p>Amepx</p>
-          <h2>Admin</h2>
+          <div class="brand-top">
+            <div class="brand-logo mono">A</div>
+            <div class="brand-meta">
+              <p class="brand-kicker">Amepx Console</p>
+              <h2 class="brand-title">Control</h2>
+            </div>
+          </div>
+          <p class="brand-summary">OAuth2 / OIDC 后台管理面板</p>
         </section>
 
         <nav class="nav">
+          <p class="nav-title">Navigation</p>
           <button class="nav-btn" data-view="overview" type="button">
-            <span>Overview</span>
+            <span class="nav-icon mono">01</span>
+            <span class="nav-copy">
+              <span class="nav-label">Overview</span>
+              <span class="nav-sub">全局统计与活动</span>
+            </span>
             <span class="nav-count" id="nav-count-overview">-</span>
           </button>
           <button class="nav-btn" data-view="clients" type="button">
-            <span>Clients</span>
+            <span class="nav-icon mono">02</span>
+            <span class="nav-copy">
+              <span class="nav-label">Clients</span>
+              <span class="nav-sub">Client 配置管理</span>
+            </span>
             <span class="nav-count" id="nav-count-clients">0</span>
           </button>
           <button class="nav-btn" data-view="requests" type="button">
-            <span>Requests</span>
+            <span class="nav-icon mono">03</span>
+            <span class="nav-copy">
+              <span class="nav-label">Requests</span>
+              <span class="nav-sub">授权请求审计</span>
+            </span>
             <span class="nav-count" id="nav-count-requests">0</span>
           </button>
           <button class="nav-btn" data-view="tokens" type="button">
-            <span>Tokens</span>
+            <span class="nav-icon mono">04</span>
+            <span class="nav-copy">
+              <span class="nav-label">Tokens</span>
+              <span class="nav-sub">生命周期与回收</span>
+            </span>
             <span class="nav-count" id="nav-count-tokens">0</span>
           </button>
         </nav>
 
-        <section class="sidebar-foot">管理密钥仅保存在当前浏览器的 LocalStorage。</section>
+        <section class="sidebar-foot">
+          <p class="sidebar-foot-title">Storage</p>
+          <p class="sidebar-foot-text">管理密钥仅保存在当前浏览器的 LocalStorage。</p>
+        </section>
       </aside>
 
       <section class="workspace">
@@ -758,8 +968,8 @@
           </div>
           <div class="head-actions">
             <span id="sync-chip" class="sync-chip">未同步</span>
-            <button id="refresh-btn" class="btn btn-ghost" type="button">刷新</button>
-            <button id="logout-btn" class="btn btn-warn" type="button">切换令牌</button>
+            <button id="refresh-btn" class="btn btn-ghost btn-compact" type="button">刷新</button>
+            <button id="logout-btn" class="btn btn-warn btn-compact" type="button">登出</button>
           </div>
         </header>
 
@@ -1009,7 +1219,6 @@
         appView: document.getElementById("app-view"),
         loginToken: document.getElementById("login-token"),
         loginBtn: document.getElementById("login-btn"),
-        loginStatus: document.getElementById("login-status"),
 
         navButtons: Array.from(document.querySelectorAll(".nav-btn")),
         navCountOverview: document.getElementById("nav-count-overview"),
@@ -1143,11 +1352,6 @@
           clearTimeout(timer);
           removeToast(toast);
         });
-      }
-
-      function setLoginStatus(text, isError = false) {
-        refs.loginStatus.textContent = text || "";
-        refs.loginStatus.style.color = isError ? "#af2f2f" : "#556964";
       }
 
       function setAuthed(flag) {
@@ -1325,7 +1529,7 @@
                 <td class="mono">${esc(item.clientId)}</td>
                 <td>
                   <strong>${esc(item.name || "-")}</strong>
-                  <div class="mono" style="margin-top: 4px; color: #5f726d">${esc(item.groupId || "-")}</div>
+                  <div class="mono" style="margin-top: 4px; color: #666666">${esc(item.groupId || "-")}</div>
                 </td>
                 <td>${status}</td>
                 <td><div class="scope-list">${scopeHtml}</div></td>
@@ -1472,7 +1676,6 @@
         localStorage.removeItem("amepx_admin_key");
         refs.loginToken.value = "";
         setAuthed(false);
-        setLoginStatus(message || "已退出", true);
         renderAll();
 
         if (message) {
@@ -1517,18 +1720,18 @@
 
       async function verifyTokenAndEnter(token) {
         if (!token) {
-          setLoginStatus("请输入令牌", true);
+          pushToast("请输入令牌", "warn");
           return;
         }
 
         state.adminKey = token;
-        setLoginStatus("验证中...");
+        refs.loginBtn.disabled = true;
+        refs.loginBtn.textContent = "验证中...";
 
         try {
           await api("/api/admin/clients?include_inactive=true");
           localStorage.setItem("amepx_admin_key", token);
           setAuthed(true);
-          setLoginStatus("");
           setView(getViewFromHash(), { fromHash: true });
           await refreshAll({ silent: true });
           pushToast("验证成功，已进入管理面板", "success");
@@ -1536,7 +1739,10 @@
           state.adminKey = "";
           localStorage.removeItem("amepx_admin_key");
           setAuthed(false);
-          setLoginStatus(String(error), true);
+          pushToast(String(error), "error", 4600);
+        } finally {
+          refs.loginBtn.disabled = false;
+          refs.loginBtn.textContent = "验证并进入";
         }
       }
 
