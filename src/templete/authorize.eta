@@ -69,9 +69,12 @@
         box-shadow:
           0 18px 36px rgba(29, 60, 124, 0.16),
           inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+        display: flex;
+        flex-direction: column;
         height: 100%;
         max-height: 100%;
-        overflow: auto;
+        min-height: 0;
+        overflow: hidden;
       }
 
       .top {
@@ -120,6 +123,10 @@
         padding: 12px;
         display: grid;
         gap: 8px;
+        flex: 1;
+        min-height: 0;
+        overflow: auto;
+        overscroll-behavior: contain;
       }
 
       .block {
