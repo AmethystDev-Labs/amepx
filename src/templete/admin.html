@@ -448,13 +448,29 @@
         flex-wrap: wrap;
       }
 
+      .head-actions .btn-compact {
+        border-radius: 11px;
+        padding: 7px 9px;
+        min-height: 34px;
+        font-size: 12px;
+        text-align: center;
+      }
+
       .sync-chip {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
         border: 1px solid var(--line);
         border-radius: 999px;
-        padding: 6px 10px;
+        padding: 7px 10px;
+        min-height: 34px;
         font-size: 12px;
         color: var(--muted);
         background: #f4f7ff;
+        text-align: center;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
       .sync-chip.ok {
@@ -784,19 +800,23 @@
         z-index: 90;
         width: min(360px, calc(100vw - 24px));
         display: grid;
-        gap: 10px;
+        gap: 9px;
       }
 
       .toast {
-        border: 1px solid var(--line);
+        position: relative;
+        border: 1px solid rgba(96, 130, 204, 0.58);
         border-radius: 14px;
-        background: rgba(255, 255, 255, 0.97);
-        backdrop-filter: blur(10px);
-        box-shadow: 0 14px 28px rgba(0, 0, 0, 0.18);
-        display: grid;
-        grid-template-columns: 1fr auto;
-        gap: 8px;
-        padding: 10px 10px 10px 12px;
+        background: linear-gradient(145deg, rgba(247, 251, 255, 0.76), rgba(234, 243, 255, 0.62));
+        backdrop-filter: blur(12px) saturate(140%);
+        box-shadow:
+          0 10px 24px rgba(42, 88, 176, 0.18),
+          inset 0 0 0 1px rgba(141, 167, 223, 0.34);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
+        padding: 10px 36px 10px 12px;
         transform: translateY(8px);
         opacity: 0;
         transition: transform 0.18s ease, opacity 0.18s ease;
@@ -808,39 +828,49 @@
       }
 
       .toast.info {
-        border-left: 4px solid #1f4fba;
+        border-color: rgba(89, 124, 200, 0.68);
       }
 
       .toast.success {
-        border-left: 4px solid #2d5fca;
+        border-color: rgba(93, 138, 206, 0.68);
       }
 
       .toast.warn {
-        border-left: 4px solid #3e4e7a;
+        border-color: rgba(113, 130, 178, 0.7);
       }
 
       .toast.error {
-        border-left: 4px solid #1f2a45;
+        border-color: rgba(117, 111, 176, 0.72);
       }
 
       .toast-text {
         margin: 0;
-        line-height: 1.5;
+        width: 100%;
+        text-align: center;
+        line-height: 1.4;
         font-size: 14px;
+        font-weight: 600;
+        color: #254681;
       }
 
       .toast-close {
-        width: 28px;
-        height: 28px;
-        border: 0;
-        border-radius: 8px;
-        background: transparent;
-        color: #666666;
+        position: absolute;
+        right: 9px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 20px;
+        height: 20px;
+        border: 1px solid rgba(112, 142, 206, 0.5);
+        border-radius: 999px;
+        background: rgba(250, 253, 255, 0.6);
+        color: #3f5d93;
+        font-size: 13px;
+        line-height: 1;
         cursor: pointer;
       }
 
       .toast-close:hover {
-        background: #efefef;
+        background: rgba(222, 235, 255, 0.76);
       }
 
       @media (max-width: 1200px) {
@@ -1390,6 +1420,7 @@
 
       function setSyncChip(text, type = "") {
         refs.syncChip.textContent = text;
+        refs.syncChip.title = text;
         refs.syncChip.classList.remove("ok", "working", "error");
         if (type) refs.syncChip.classList.add(type);
       }
