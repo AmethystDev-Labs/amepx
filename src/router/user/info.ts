@@ -77,7 +77,7 @@ export const userInfoRouter = new Elysia({ prefix: "/user" }).get(
 
         return {
             ...oidcClaims,
-            sub: tokenDoc.userId,
+            sub: tokenDoc.nickname,
             client_id: tokenDoc.clientId,
             group_id: tokenDoc.groupId,
             nickname: tokenDoc.nickname,

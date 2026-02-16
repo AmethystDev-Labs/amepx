@@ -25,6 +25,7 @@
         --radius-md: 10px;
         --app-pad: clamp(10px, 1.5vw, 20px);
         --app-gap: 14px;
+        --app-height: calc(100dvh - (var(--app-pad) * 2));
         --sidebar-width: clamp(220px, 20vw, 300px);
         --login-card-width: 760px;
       }
@@ -42,7 +43,8 @@
       }
 
       body {
-        min-height: 100vh;
+        min-height: 100dvh;
+        height: 100dvh;
         color: var(--ink);
         font-family: "IBM Plex Sans", "Noto Sans SC", "PingFang SC", "Segoe UI", sans-serif;
         background:
@@ -148,8 +150,8 @@
 
       .login-wrap {
         width: 100%;
-        height: calc(100vh - (var(--app-pad) * 2));
-        min-height: calc(100vh - (var(--app-pad) * 2));
+        height: var(--app-height);
+        min-height: var(--app-height);
         margin: 0 auto;
         display: grid;
         place-items: center;
@@ -209,8 +211,8 @@
 
       .app {
         width: 100%;
-        min-height: calc(100vh - (var(--app-pad) * 2));
-        height: calc(100vh - (var(--app-pad) * 2));
+        min-height: var(--app-height);
+        height: var(--app-height);
         margin: 0 auto;
         display: grid;
         grid-template-columns: minmax(220px, var(--sidebar-width)) minmax(0, 1fr);
@@ -502,6 +504,7 @@
       .view {
         margin-top: 14px;
         flex: 1;
+        height: 100%;
         min-height: 0;
         display: flex;
         flex-direction: column;
@@ -580,12 +583,14 @@
 
       #view-overview .panel-grid {
         flex: 1;
+        height: 100%;
         min-height: 0;
       }
 
       #view-overview .panel {
         display: flex;
         flex-direction: column;
+        height: 100%;
         min-height: 0;
       }
 
@@ -619,6 +624,7 @@
       #view-tokens .table-wrap {
         margin-top: 8px;
         flex: 1;
+        height: 100%;
         min-height: 0;
         max-height: none;
         overflow-y: auto;
@@ -904,8 +910,8 @@
 
       @media (max-width: 980px) {
         .app {
-          height: calc(100vh - (var(--app-pad) * 2));
-          min-height: calc(100vh - (var(--app-pad) * 2));
+          height: var(--app-height);
+          min-height: var(--app-height);
           grid-template-columns: 1fr;
           grid-template-rows: minmax(0, 42vh) minmax(0, 1fr);
         }
