@@ -37,10 +37,10 @@ export function buildStandardUserClaims(params: {
     };
 
     if (hasScope(params.scope, "profile")) {
-        const displayName = params.card?.trim() || params.nickname?.trim() || sub;
+        const displayName = params.nickname?.trim() || params.card?.trim() || sub;
         claims.name = displayName;
         claims.nickname = params.nickname?.trim() || displayName;
-        claims.preferred_username = sub;
+        claims.preferred_username = displayName;
         if (params.avatar?.trim()) {
             claims.picture = params.avatar.trim();
         }
