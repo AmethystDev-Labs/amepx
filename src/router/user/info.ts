@@ -83,6 +83,7 @@ export const userInfoRouter = new Elysia({ prefix: "/user" }).get(
             nickname: tokenDoc.nickname,
             card: tokenDoc.card,
             avatar: tokenDoc.avatar,
+            picture: tokenDoc.avatar,
             scope: tokenDoc.scope,
         };
     },
