@@ -1,0 +1,2018 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Amepx Admin Console</title>
+    <style>
+      :root {
+        --bg: #e3e9f5;
+        --ink: #151d2d;
+        --muted: #5e6b84;
+        --line: #bfcae0;
+        --line-strong: #8f9dbb;
+        --surface: #ffffff;
+        --surface-soft: #eef3ff;
+        --brand: #2a5ec8;
+        --brand-2: #1e469f;
+        --warn: #34425d;
+        --danger: #22304d;
+        --nav-bg: #182846;
+        --nav-ink: #f4f7ff;
+        --nav-muted: #a8b6d1;
+        --radius-xl: 22px;
+        --radius-lg: 14px;
+        --radius-md: 10px;
+        --app-pad: clamp(10px, 1.5vw, 20px);
+        --app-gap: 14px;
+        --app-height: calc(100dvh - (var(--app-pad) * 2));
+        --sidebar-width: clamp(220px, 20vw, 300px);
+        --login-card-width: 760px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+      }
+
+      body {
+        min-height: 100dvh;
+        height: 100dvh;
+        color: var(--ink);
+        font-family: "IBM Plex Sans", "Noto Sans SC", "PingFang SC", "Segoe UI", sans-serif;
+        background:
+          radial-gradient(1200px 540px at -8% -18%, #ffffff 0%, transparent 62%),
+          radial-gradient(980px 520px at 108% -16%, rgba(62, 107, 211, 0.16) 0%, transparent 64%),
+          var(--bg);
+        padding: var(--app-pad);
+        overflow: hidden;
+      }
+
+      button,
+      input,
+      textarea,
+      select {
+        font: inherit;
+        color: inherit;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      .mono {
+        font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+      }
+
+      .btn {
+        border: 1px solid var(--line-strong);
+        border-radius: 999px;
+        padding: 8px 13px;
+        font-size: 14px;
+        line-height: 1.2;
+        background: #fff;
+        cursor: pointer;
+        transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+      }
+
+      .btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 18px rgba(0, 0, 0, 0.14);
+      }
+
+      .btn-primary {
+        border-color: var(--brand-2);
+        color: #fff;
+        background: linear-gradient(140deg, #6f96e5, #4d77cf);
+      }
+
+      .btn-warn {
+        border-color: #b9c8e6;
+        background: #edf2ff;
+        color: var(--warn);
+      }
+
+      .btn-danger {
+        border-color: #b4c5e8;
+        background: #e8efff;
+        color: var(--danger);
+      }
+
+      .btn-ghost {
+        background: #f4f7ff;
+      }
+
+      .btn-compact {
+        border-radius: 10px;
+        padding: 5px 9px;
+        font-size: 11px;
+      }
+
+      .field,
+      .area,
+      .select {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-md);
+        background: #fff;
+        padding: 8px 10px;
+        font-size: 14px;
+        line-height: 1.3;
+      }
+
+      .select {
+        border-radius: 14px;
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        padding-right: 36px;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23314875' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        background-size: 12px 8px;
+      }
+
+      .select::-ms-expand {
+        display: none;
+      }
+
+      .area {
+        min-height: 78px;
+        resize: vertical;
+      }
+
+      .login-wrap {
+        width: 100%;
+        height: var(--app-height);
+        min-height: var(--app-height);
+        margin: 0 auto;
+        display: grid;
+        place-items: center;
+        overflow: auto;
+      }
+
+      .login-card {
+        width: min(var(--login-card-width), 100%);
+        position: relative;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 28px;
+        background: linear-gradient(160deg, rgba(255, 255, 255, 0.96), rgba(232, 240, 255, 0.9));
+        backdrop-filter: blur(10px);
+        padding: 34px;
+        box-shadow: 0 18px 38px rgba(12, 24, 52, 0.16);
+      }
+
+      .login-card::after {
+        content: "";
+        position: absolute;
+        width: 280px;
+        height: 280px;
+        top: -140px;
+        right: -130px;
+        border-radius: 999px;
+        background: radial-gradient(circle at center, rgba(58, 109, 214, 0.24), rgba(58, 109, 214, 0));
+      }
+
+      .login-eyebrow {
+        margin: 0;
+        color: var(--muted);
+        font-size: 13px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .login-title {
+        margin: 8px 0 0;
+        font-size: clamp(30px, 5vw, 48px);
+        line-height: 1.05;
+      }
+
+      .login-desc {
+        margin: 14px 0 0;
+        max-width: 560px;
+        color: var(--muted);
+        line-height: 1.72;
+      }
+
+      .login-form {
+        margin-top: 22px;
+        display: grid;
+        gap: 12px;
+        width: min(560px, 100%);
+      }
+
+      .app {
+        width: 100%;
+        min-height: var(--app-height);
+        height: var(--app-height);
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: minmax(220px, var(--sidebar-width)) minmax(0, 1fr);
+        gap: var(--app-gap);
+        align-items: stretch;
+        overflow: hidden;
+      }
+
+      .sidebar {
+        width: auto;
+        height: 100%;
+        border: 1px solid #263a66;
+        border-radius: var(--radius-xl);
+        background: linear-gradient(180deg, #1a2a4c, #1c2f56 58%, #172746);
+        color: var(--nav-ink);
+        padding: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .brand {
+        border: 1px solid #3a4f82;
+        border-radius: 16px;
+        background: #1f3360;
+        padding: 12px;
+        display: grid;
+        gap: 10px;
+      }
+
+      .brand-top {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .brand-logo {
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        border: 1px solid #6e92dd;
+        display: grid;
+        place-items: center;
+        font-size: 15px;
+        font-weight: 700;
+        background: #476fca;
+        color: #ffffff;
+      }
+
+      .brand-meta {
+        min-width: 0;
+      }
+
+      .brand-kicker {
+        margin: 0;
+        color: #b6c6e8;
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .brand-title {
+        margin: 4px 0 0;
+        font-size: 22px;
+        line-height: 1;
+        color: #f8f8f8;
+      }
+
+      .brand-summary {
+        margin: 0;
+        color: #b0c0de;
+        font-size: 12px;
+      }
+
+      .nav {
+        display: grid;
+        gap: 8px;
+        border: 1px solid #405583;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.06);
+        padding: 10px;
+      }
+
+      .nav-title {
+        margin: 0 0 2px;
+        color: #bcc9e4;
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .nav-btn {
+        width: 100%;
+        border: 1px solid #496096;
+        border-radius: 12px;
+        background: #213866;
+        color: var(--nav-ink);
+        padding: 7px 8px;
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        align-items: center;
+        text-align: left;
+        gap: 7px;
+        cursor: pointer;
+        transition: background 0.12s ease, border 0.12s ease;
+      }
+
+      .nav-btn:hover {
+        background: #2c477f;
+        border-color: #5f81cb;
+      }
+
+      .nav-btn.active {
+        border-color: #9db9f8;
+        background: #f3f7ff;
+        color: #141f35;
+      }
+
+      .nav-icon {
+        width: 22px;
+        height: 22px;
+        border-radius: 7px;
+        border: 1px solid #6a89cd;
+        display: grid;
+        place-items: center;
+        font-size: 10px;
+        font-weight: 700;
+        color: #ecf1ff;
+        background: #335796;
+      }
+
+      .nav-btn.active .nav-icon {
+        border-color: #a8bef1;
+        color: #294784;
+        background: #dee9ff;
+      }
+
+      .nav-copy {
+        display: grid;
+        gap: 2px;
+      }
+
+      .nav-label {
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.01em;
+      }
+
+      .nav-sub {
+        font-size: 11px;
+        color: var(--nav-muted);
+      }
+
+      .nav-btn.active .nav-sub {
+        color: #525f79;
+      }
+
+      .nav-count {
+        min-width: 26px;
+        border-radius: 999px;
+        padding: 1px 8px;
+        text-align: center;
+        font-size: 11px;
+        color: #eff3ff;
+        border: 1px solid #6686ca;
+        background: #335690;
+      }
+
+      .nav-btn.active .nav-count {
+        color: #ffffff;
+        border-color: #2a5ec8;
+        background: #2a5ec8;
+      }
+
+      .sidebar-foot {
+        margin-top: auto;
+        border: 1px solid #415683;
+        border-radius: 12px;
+        background: #20345f;
+        padding: 10px;
+        line-height: 1.5;
+      }
+
+      .sidebar-foot-title {
+        margin: 0;
+        color: #e0e9ff;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .sidebar-foot-text {
+        margin: 5px 0 0;
+        color: #bac9e6;
+        font-size: 12px;
+      }
+
+      .workspace {
+        width: auto;
+        height: 100%;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-xl);
+        background: rgba(248, 251, 255, 0.94);
+        backdrop-filter: blur(8px);
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        overflow: hidden;
+      }
+
+      .head {
+        display: flex;
+        justify-content: space-between;
+        align-items: end;
+        gap: 16px;
+      }
+
+      .view-kicker {
+        margin: 0;
+        color: var(--muted);
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+
+      .view-title {
+        margin: 6px 0 0;
+        font-size: clamp(28px, 4vw, 40px);
+        line-height: 1.02;
+      }
+
+      .view-desc {
+        margin: 8px 0 0;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .head-actions {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      .head-actions .btn-compact {
+        border-radius: 11px;
+        padding: 7px 9px;
+        min-height: 34px;
+        font-size: 12px;
+        text-align: center;
+      }
+
+      .sync-chip {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 7px 10px;
+        min-height: 34px;
+        font-size: 12px;
+        color: var(--muted);
+        background: #f4f7ff;
+        text-align: center;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .sync-chip.ok {
+        color: #2a4f9d;
+        border-color: #aac0eb;
+        background: #e8f0ff;
+      }
+
+      .sync-chip.working {
+        color: #365182;
+        border-color: #b8c9ea;
+        background: #edf3ff;
+      }
+
+      .sync-chip.error {
+        color: #2f456f;
+        border-color: #aabadd;
+        background: #e7edfa;
+      }
+
+      .view {
+        margin-top: 14px;
+        flex: 1;
+        height: 100%;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .metric-grid {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .metric-card {
+        border: 1px solid var(--line);
+        border-radius: var(--radius-lg);
+        background: #f7f9ff;
+        padding: 14px;
+      }
+
+      .metric-label {
+        margin: 0;
+        color: var(--muted);
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+
+      .metric-value {
+        margin: 8px 0 0;
+        font-size: clamp(24px, 3vw, 36px);
+        line-height: 1;
+        font-weight: 700;
+      }
+
+      .panel-grid {
+        margin-top: 12px;
+        display: grid;
+        gap: 12px;
+        grid-template-columns: 1.1fr 1fr;
+      }
+
+      .panel {
+        border: 1px solid var(--line);
+        border-radius: var(--radius-lg);
+        background: #f8faff;
+        padding: 12px;
+      }
+
+      .panel h3 {
+        margin: 0;
+        font-size: 18px;
+      }
+
+      .panel p {
+        margin: 6px 0 0;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .table-wrap {
+        margin-top: 10px;
+        min-height: 0;
+        overflow: auto;
+      }
+
+      .panel .table-wrap {
+        max-height: 250px;
+      }
+
+      #view-overview {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        overflow: hidden;
+      }
+
+      #view-overview .panel-grid {
+        flex: 1;
+        height: 100%;
+        min-height: 0;
+      }
+
+      #view-overview .panel {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 0;
+      }
+
+      #view-overview .panel .table-wrap {
+        margin-top: 8px;
+        flex: 1;
+        min-height: 0;
+        max-height: none;
+        overflow-y: auto;
+        overflow-x: auto;
+        overscroll-behavior: contain;
+      }
+
+      #view-clients,
+      #view-requests,
+      #view-tokens {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        overflow: hidden;
+      }
+
+      #view-clients .toolbar,
+      #view-requests .toolbar,
+      #view-tokens .toolbar {
+        flex: 0 0 auto;
+      }
+
+      #view-clients .table-wrap,
+      #view-requests .table-wrap,
+      #view-tokens .table-wrap {
+        margin-top: 8px;
+        flex: 1;
+        height: 100%;
+        min-height: 0;
+        max-height: none;
+        overflow-y: auto;
+        overflow-x: auto;
+        overscroll-behavior: contain;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+
+      th,
+      td {
+        text-align: left;
+        vertical-align: top;
+        padding: 8px 6px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      th {
+        color: var(--muted);
+        font-weight: 600;
+      }
+
+      .empty-row {
+        text-align: center;
+        color: var(--muted);
+        padding: 16px 8px;
+      }
+
+      .status-badge {
+        display: inline-flex;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 2px 8px;
+        font-size: 12px;
+        color: var(--muted);
+        background: #f8faff;
+      }
+
+      .status-badge.ok {
+        color: #1f418f;
+        border-color: #9cb7ec;
+        background: #e7efff;
+      }
+
+      .status-badge.warn {
+        color: #28427d;
+        border-color: #adc0eb;
+        background: #edf3ff;
+      }
+
+      .status-badge.off {
+        color: #5e6675;
+        background: #eceff5;
+      }
+
+      .toolbar {
+        display: grid;
+        grid-template-columns: 1fr 160px auto;
+        gap: 8px;
+      }
+
+      .toolbar .btn-primary {
+        border-color: #6d90d8;
+        background: linear-gradient(140deg, #7ea3ea, #5b84d7);
+        padding: 5px 10px;
+        font-size: 12px;
+        border-radius: 12px;
+      }
+
+      .row-actions {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+
+      .btn-xs {
+        border-radius: 999px;
+        padding: 3px 8px;
+        font-size: 11px;
+      }
+
+      .scope-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+      }
+
+      .scope-pill {
+        display: inline-flex;
+        border: 1px solid #a8bbe5;
+        border-radius: 999px;
+        padding: 1px 7px;
+        font-size: 11px;
+        color: #224083;
+        background: #eaf0ff;
+      }
+
+      .token-state {
+        display: inline-flex;
+        border-radius: 999px;
+        padding: 2px 8px;
+        font-size: 12px;
+        border: 1px solid var(--line);
+      }
+
+      .token-state.active {
+        color: #1f438f;
+        border-color: #9bb7ed;
+        background: #e7efff;
+      }
+
+      .token-state.inactive {
+        color: #5f6878;
+        background: #eceff5;
+      }
+
+      .modal {
+        position: fixed;
+        inset: 0;
+        z-index: 70;
+        display: grid;
+        place-items: center;
+        padding: 18px;
+      }
+
+      .modal-backdrop {
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.56);
+        backdrop-filter: blur(2px);
+      }
+
+      .modal-card {
+        position: relative;
+        width: min(880px, 100%);
+        max-height: min(90vh, 920px);
+        overflow: auto;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-xl);
+        background: #fff;
+        box-shadow: 0 24px 44px rgba(0, 0, 0, 0.28);
+        padding: 16px;
+      }
+
+      .modal-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        gap: 12px;
+      }
+
+      .modal-title {
+        margin: 0;
+        font-size: 24px;
+      }
+
+      .modal-tip {
+        margin: 6px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .modal-close {
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        width: 30px;
+        height: 30px;
+        background: #fff;
+        cursor: pointer;
+      }
+
+      .form-grid {
+        margin-top: 12px;
+        display: grid;
+        gap: 10px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .full {
+        grid-column: 1 / -1;
+      }
+
+      .modal-actions {
+        margin-top: 12px;
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .toast-root {
+        position: fixed;
+        right: 16px;
+        bottom: 16px;
+        z-index: 90;
+        width: min(360px, calc(100vw - 24px));
+        display: grid;
+        gap: 9px;
+      }
+
+      .toast {
+        position: relative;
+        border: 1px solid rgba(96, 130, 204, 0.58);
+        border-radius: 14px;
+        background: linear-gradient(145deg, rgba(247, 251, 255, 0.76), rgba(234, 243, 255, 0.62));
+        backdrop-filter: blur(12px) saturate(140%);
+        box-shadow:
+          0 10px 24px rgba(42, 88, 176, 0.18),
+          inset 0 0 0 1px rgba(141, 167, 223, 0.34);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
+        padding: 10px 36px 10px 12px;
+        transform: translateY(8px);
+        opacity: 0;
+        transition: transform 0.18s ease, opacity 0.18s ease;
+      }
+
+      .toast.show {
+        transform: translateY(0);
+        opacity: 1;
+      }
+
+      .toast.info {
+        border-color: rgba(89, 124, 200, 0.68);
+      }
+
+      .toast.success {
+        border-color: rgba(93, 138, 206, 0.68);
+      }
+
+      .toast.warn {
+        border-color: rgba(113, 130, 178, 0.7);
+      }
+
+      .toast.error {
+        border-color: rgba(117, 111, 176, 0.72);
+      }
+
+      .toast-text {
+        margin: 0;
+        width: 100%;
+        text-align: center;
+        line-height: 1.4;
+        font-size: 14px;
+        font-weight: 600;
+        color: #254681;
+      }
+
+      .toast-close {
+        position: absolute;
+        right: 9px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 20px;
+        height: 20px;
+        border: 1px solid rgba(112, 142, 206, 0.5);
+        border-radius: 999px;
+        background: rgba(250, 253, 255, 0.6);
+        color: #3f5d93;
+        font-size: 13px;
+        line-height: 1;
+        cursor: pointer;
+      }
+
+      .toast-close:hover {
+        background: rgba(222, 235, 255, 0.76);
+      }
+
+      @media (max-width: 1200px) {
+        .metric-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .panel-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 980px) {
+        .app {
+          height: var(--app-height);
+          min-height: var(--app-height);
+          grid-template-columns: 1fr;
+          grid-template-rows: minmax(0, 42vh) minmax(0, 1fr);
+        }
+
+        .sidebar {
+          height: 100%;
+          min-height: 0;
+          max-height: 100%;
+          overflow: auto;
+        }
+
+        .nav {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          align-items: stretch;
+        }
+
+        .nav-title {
+          grid-column: 1 / -1;
+        }
+
+        .workspace {
+          height: 100%;
+          min-height: 0;
+        }
+
+        .view {
+          min-height: 0;
+        }
+      }
+
+      @media (max-width: 720px) {
+        .head {
+          flex-direction: column;
+          align-items: start;
+        }
+
+        .head-actions {
+          width: 100%;
+          justify-content: flex-start;
+        }
+
+        .head-actions .btn {
+          flex: 0 0 auto;
+        }
+
+        .metric-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .toolbar {
+          grid-template-columns: 1fr;
+        }
+
+        .form-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .nav {
+          grid-template-columns: 1fr;
+        }
+      }
+
+    </style>
+  </head>
+  <body>
+    <main id="login-view" class="login-wrap">
+      <section class="login-card">
+        <p class="login-eyebrow">Amepx Management</p>
+        <h1 class="login-title">Admin Console</h1>
+        <p class="login-desc">
+          输入管理员密钥（x-admin-key）验证身份。验证通过后可管理 OAuth Client、授权请求和 Token。
+        </p>
+        <div class="login-form">
+          <input id="login-token" class="field" type="password" placeholder="ADMIN_KEY / x-admin-key" autocomplete="off" />
+          <button id="login-btn" class="btn btn-primary" type="button">验证并进入</button>
+        </div>
+      </section>
+    </main>
+
+    <main id="app-view" class="app hidden">
+      <aside class="sidebar">
+        <section class="brand">
+          <div class="brand-top">
+            <div class="brand-logo mono">A</div>
+            <div class="brand-meta">
+              <p class="brand-kicker">Amepx Console</p>
+              <h2 class="brand-title">Control</h2>
+            </div>
+          </div>
+          <p class="brand-summary">OAuth2 / OIDC 后台管理面板</p>
+        </section>
+
+        <nav class="nav">
+          <p class="nav-title">Navigation</p>
+          <button class="nav-btn" data-view="overview" type="button">
+            <span class="nav-icon mono">01</span>
+            <span class="nav-copy">
+              <span class="nav-label">Overview</span>
+              <span class="nav-sub">全局统计与活动</span>
+            </span>
+            <span class="nav-count" id="nav-count-overview">-</span>
+          </button>
+          <button class="nav-btn" data-view="clients" type="button">
+            <span class="nav-icon mono">02</span>
+            <span class="nav-copy">
+              <span class="nav-label">Clients</span>
+              <span class="nav-sub">Client 配置管理</span>
+            </span>
+            <span class="nav-count" id="nav-count-clients">0</span>
+          </button>
+          <button class="nav-btn" data-view="requests" type="button">
+            <span class="nav-icon mono">03</span>
+            <span class="nav-copy">
+              <span class="nav-label">Requests</span>
+              <span class="nav-sub">授权请求审计</span>
+            </span>
+            <span class="nav-count" id="nav-count-requests">0</span>
+          </button>
+          <button class="nav-btn" data-view="tokens" type="button">
+            <span class="nav-icon mono">04</span>
+            <span class="nav-copy">
+              <span class="nav-label">Tokens</span>
+              <span class="nav-sub">生命周期与回收</span>
+            </span>
+            <span class="nav-count" id="nav-count-tokens">0</span>
+          </button>
+        </nav>
+
+        <section class="sidebar-foot">
+          <p class="sidebar-foot-title">Storage</p>
+          <p class="sidebar-foot-text">管理密钥仅保存在当前浏览器的 LocalStorage。</p>
+        </section>
+      </aside>
+
+      <section class="workspace">
+        <header class="head">
+          <div>
+            <p id="view-kicker" class="view-kicker">Control Center</p>
+            <h1 id="view-title" class="view-title">Overview</h1>
+            <p id="view-desc" class="view-desc">查看关键统计和近期活动。</p>
+          </div>
+          <div class="head-actions">
+            <span id="sync-chip" class="sync-chip">未同步</span>
+            <button id="refresh-btn" class="btn btn-ghost btn-compact" type="button">刷新</button>
+            <button id="logout-btn" class="btn btn-warn btn-compact" type="button">登出</button>
+          </div>
+        </header>
+
+        <section id="view-overview" class="view">
+          <div class="metric-grid">
+            <article class="metric-card">
+              <p class="metric-label">Total Clients</p>
+              <p id="metric-clients" class="metric-value">0</p>
+            </article>
+            <article class="metric-card">
+              <p class="metric-label">Active Clients</p>
+              <p id="metric-active-clients" class="metric-value">0</p>
+            </article>
+            <article class="metric-card">
+              <p class="metric-label">Pending Requests</p>
+              <p id="metric-pending-requests" class="metric-value">0</p>
+            </article>
+            <article class="metric-card">
+              <p class="metric-label">Active Tokens</p>
+              <p id="metric-active-tokens" class="metric-value">0</p>
+            </article>
+          </div>
+
+          <div class="panel-grid">
+            <section class="panel">
+              <h3>Latest Requests</h3>
+              <p>最近授权请求（按时间倒序）</p>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>requestId</th>
+                      <th>client</th>
+                      <th>status</th>
+                      <th>createdAt</th>
+                    </tr>
+                  </thead>
+                  <tbody id="overview-requests-body"></tbody>
+                </table>
+              </div>
+            </section>
+
+            <section class="panel">
+              <h3>Token Expiry Window</h3>
+              <p>最快到期的 token（仅 active）</p>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>id</th>
+                      <th>client</th>
+                      <th>expires</th>
+                      <th>left</th>
+                    </tr>
+                  </thead>
+                  <tbody id="overview-tokens-body"></tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <section id="view-clients" class="view hidden">
+          <div class="toolbar">
+            <input id="clients-search" class="field" placeholder="搜索 clientId / name / scope / redirect uri" />
+            <select id="clients-filter" class="select">
+              <option value="all">全部状态</option>
+              <option value="active">仅 Active</option>
+              <option value="disabled">仅 Disabled</option>
+            </select>
+            <button id="create-client-btn" class="btn btn-primary" type="button">创建 Client</button>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>clientId</th>
+                  <th>name / group</th>
+                  <th>status</th>
+                  <th>scopes</th>
+                  <th>redirects</th>
+                  <th>action</th>
+                </tr>
+              </thead>
+              <tbody id="clients-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="view-requests" class="view hidden">
+          <div class="toolbar">
+            <input id="requests-search" class="field" placeholder="搜索 requestId / clientId / userId" />
+            <select id="requests-filter" class="select">
+              <option value="all">全部状态</option>
+              <option value="pending">pending</option>
+              <option value="approved">approved</option>
+              <option value="rejected">rejected</option>
+              <option value="expired">expired</option>
+            </select>
+            <div></div>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>requestId</th>
+                  <th>client</th>
+                  <th>status</th>
+                  <th>user</th>
+                  <th>scope</th>
+                  <th>createdAt</th>
+                </tr>
+              </thead>
+              <tbody id="requests-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="view-tokens" class="view hidden">
+          <div class="toolbar">
+            <input id="tokens-search" class="field" placeholder="搜索 token id / client / user / scope" />
+            <select id="tokens-filter" class="select">
+              <option value="all">全部状态</option>
+              <option value="active">active</option>
+              <option value="inactive">inactive</option>
+            </select>
+            <div></div>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>id</th>
+                  <th>client</th>
+                  <th>user</th>
+                  <th>scope</th>
+                  <th>access exp</th>
+                  <th>state</th>
+                  <th>action</th>
+                </tr>
+              </thead>
+              <tbody id="tokens-body"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <section id="client-modal" class="modal hidden">
+      <div id="modal-backdrop" class="modal-backdrop"></div>
+      <article class="modal-card">
+        <header class="modal-head">
+          <div>
+            <h2 id="modal-title" class="modal-title">Create Client</h2>
+            <p class="modal-tip">创建或编辑 OAuth Client 配置。</p>
+          </div>
+          <button id="modal-close" class="modal-close" type="button">×</button>
+        </header>
+
+        <form id="client-form" class="form-grid">
+          <input id="form-client-id" class="field full" name="clientId" placeholder="clientId (required)" required />
+          <input id="form-name" class="field" name="name" placeholder="name (required)" required />
+          <input id="form-group-id" class="field" name="groupId" placeholder="groupId" />
+          <input id="form-client-secret" class="field full" name="clientSecret" placeholder="clientSecret (optional)" />
+          <input id="form-picture" class="field full" name="picture" placeholder="picture URL" />
+          <textarea id="form-description" class="area full" name="description" placeholder="description"></textarea>
+          <textarea
+            id="form-redirect-uris"
+            class="area full"
+            name="redirectUris"
+            placeholder="redirectUris，每行一个或逗号分隔"
+            required
+          ></textarea>
+          <textarea
+            id="form-scopes"
+            class="area full"
+            name="scopes"
+            placeholder="scopes，空格 / 逗号 / 换行分隔"
+          ></textarea>
+          <label class="full" style="display: inline-flex; align-items: center; gap: 8px">
+            <input id="form-active" type="checkbox" checked />
+            <span>active</span>
+          </label>
+          <div class="modal-actions full">
+            <button id="form-submit" class="btn btn-primary" type="submit">保存</button>
+            <button id="form-cancel" class="btn btn-ghost" type="button">取消</button>
+          </div>
+        </form>
+      </article>
+    </section>
+
+    <div id="toast-root" class="toast-root" aria-live="polite"></div>
+
+    <script>
+      const VIEW_META = {
+        overview: {
+          kicker: "Control Center",
+          title: "Overview",
+          desc: "查看关键统计和近期活动。",
+        },
+        clients: {
+          kicker: "Client Management",
+          title: "Clients",
+          desc: "创建、编辑、启停和删除 OAuth Client。",
+        },
+        requests: {
+          kicker: "Audit",
+          title: "Authorization Requests",
+          desc: "查看近期授权请求并按状态过滤。",
+        },
+        tokens: {
+          kicker: "Token Lifecycle",
+          title: "Tokens",
+          desc: "查看 token 状态并执行 revoke。",
+        },
+      };
+
+      const state = {
+        adminKey: localStorage.getItem("amepx_admin_key") || "",
+        authed: false,
+        view: "overview",
+        clients: [],
+        requests: [],
+        tokens: [],
+        filters: {
+          clientsQuery: "",
+          clientsStatus: "all",
+          requestsQuery: "",
+          requestsStatus: "all",
+          tokensQuery: "",
+          tokensStatus: "all",
+        },
+      };
+
+      const modalState = {
+        mode: "create",
+        clientId: "",
+      };
+
+      let toastSeed = 0;
+
+      const refs = {
+        loginView: document.getElementById("login-view"),
+        appView: document.getElementById("app-view"),
+        loginToken: document.getElementById("login-token"),
+        loginBtn: document.getElementById("login-btn"),
+
+        navButtons: Array.from(document.querySelectorAll(".nav-btn")),
+        navCountOverview: document.getElementById("nav-count-overview"),
+        navCountClients: document.getElementById("nav-count-clients"),
+        navCountRequests: document.getElementById("nav-count-requests"),
+        navCountTokens: document.getElementById("nav-count-tokens"),
+
+        viewKicker: document.getElementById("view-kicker"),
+        viewTitle: document.getElementById("view-title"),
+        viewDesc: document.getElementById("view-desc"),
+        syncChip: document.getElementById("sync-chip"),
+        refreshBtn: document.getElementById("refresh-btn"),
+        logoutBtn: document.getElementById("logout-btn"),
+
+        viewOverview: document.getElementById("view-overview"),
+        viewClients: document.getElementById("view-clients"),
+        viewRequests: document.getElementById("view-requests"),
+        viewTokens: document.getElementById("view-tokens"),
+
+        metricClients: document.getElementById("metric-clients"),
+        metricActiveClients: document.getElementById("metric-active-clients"),
+        metricPendingRequests: document.getElementById("metric-pending-requests"),
+        metricActiveTokens: document.getElementById("metric-active-tokens"),
+        overviewRequestsBody: document.getElementById("overview-requests-body"),
+        overviewTokensBody: document.getElementById("overview-tokens-body"),
+
+        clientsSearch: document.getElementById("clients-search"),
+        clientsFilter: document.getElementById("clients-filter"),
+        createClientBtn: document.getElementById("create-client-btn"),
+        clientsBody: document.getElementById("clients-body"),
+
+        requestsSearch: document.getElementById("requests-search"),
+        requestsFilter: document.getElementById("requests-filter"),
+        requestsBody: document.getElementById("requests-body"),
+
+        tokensSearch: document.getElementById("tokens-search"),
+        tokensFilter: document.getElementById("tokens-filter"),
+        tokensBody: document.getElementById("tokens-body"),
+
+        clientModal: document.getElementById("client-modal"),
+        modalBackdrop: document.getElementById("modal-backdrop"),
+        modalClose: document.getElementById("modal-close"),
+        modalTitle: document.getElementById("modal-title"),
+        clientForm: document.getElementById("client-form"),
+        formClientId: document.getElementById("form-client-id"),
+        formName: document.getElementById("form-name"),
+        formGroupId: document.getElementById("form-group-id"),
+        formClientSecret: document.getElementById("form-client-secret"),
+        formPicture: document.getElementById("form-picture"),
+        formDescription: document.getElementById("form-description"),
+        formRedirectUris: document.getElementById("form-redirect-uris"),
+        formScopes: document.getElementById("form-scopes"),
+        formActive: document.getElementById("form-active"),
+        formCancel: document.getElementById("form-cancel"),
+
+        toastRoot: document.getElementById("toast-root"),
+      };
+
+      refs.loginToken.value = state.adminKey;
+
+      function esc(value) {
+        return String(value ?? "")
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#39;");
+      }
+
+      function parseList(value) {
+        return String(value || "")
+          .split(/[\n,\s]+/)
+          .map((item) => item.trim())
+          .filter(Boolean);
+      }
+
+      function formatTime(value) {
+        if (!value) return "-";
+        const d = new Date(value);
+        if (Number.isNaN(d.getTime())) return "-";
+        return d.toLocaleString();
+      }
+
+      function timeLeft(target) {
+        const ms = new Date(target).getTime() - Date.now();
+        if (!Number.isFinite(ms) || ms <= 0) return "expired";
+        const minute = 60 * 1000;
+        const hour = 60 * minute;
+        const day = 24 * hour;
+        if (ms < hour) return `${Math.max(1, Math.floor(ms / minute))}m`;
+        if (ms < day) return `${Math.floor(ms / hour)}h`;
+        return `${Math.floor(ms / day)}d`;
+      }
+
+      function statusBadge(status) {
+        if (status === "approved") return '<span class="status-badge ok">approved</span>';
+        if (status === "pending") return '<span class="status-badge warn">pending</span>';
+        if (status === "active") return '<span class="status-badge ok">active</span>';
+        return `<span class="status-badge off">${esc(status || "unknown")}</span>`;
+      }
+
+      function tokenIsActive(item) {
+        return !item.revokedAt && new Date(item.accessExpiresAt).getTime() > Date.now();
+      }
+
+      function removeToast(toast) {
+        toast.classList.remove("show");
+        setTimeout(() => toast.remove(), 180);
+      }
+
+      function pushToast(message, type = "info", duration = 3200) {
+        const toast = document.createElement("article");
+        toast.className = `toast ${type}`;
+        toast.dataset.toastId = String(toastSeed++);
+
+        const text = document.createElement("p");
+        text.className = "toast-text";
+        text.textContent = String(message);
+
+        const close = document.createElement("button");
+        close.className = "toast-close";
+        close.type = "button";
+        close.textContent = "×";
+
+        toast.append(text, close);
+        refs.toastRoot.appendChild(toast);
+        requestAnimationFrame(() => toast.classList.add("show"));
+
+        const timer = setTimeout(() => removeToast(toast), duration);
+        close.addEventListener("click", () => {
+          clearTimeout(timer);
+          removeToast(toast);
+        });
+      }
+
+      function setAuthed(flag) {
+        state.authed = flag;
+        refs.loginView.classList.toggle("hidden", flag);
+        refs.appView.classList.toggle("hidden", !flag);
+      }
+
+      function setSyncChip(text, type = "") {
+        refs.syncChip.textContent = text;
+        refs.syncChip.title = text;
+        refs.syncChip.classList.remove("ok", "working", "error");
+        if (type) refs.syncChip.classList.add(type);
+      }
+
+      function setView(view, options = {}) {
+        const nextView = VIEW_META[view] ? view : "overview";
+        state.view = nextView;
+
+        refs.navButtons.forEach((btn) => {
+          btn.classList.toggle("active", btn.dataset.view === nextView);
+        });
+
+        refs.viewOverview.classList.toggle("hidden", nextView !== "overview");
+        refs.viewClients.classList.toggle("hidden", nextView !== "clients");
+        refs.viewRequests.classList.toggle("hidden", nextView !== "requests");
+        refs.viewTokens.classList.toggle("hidden", nextView !== "tokens");
+
+        const meta = VIEW_META[nextView];
+        refs.viewKicker.textContent = meta.kicker;
+        refs.viewTitle.textContent = meta.title;
+        refs.viewDesc.textContent = meta.desc;
+
+        if (!options.fromHash) {
+          window.location.hash = nextView;
+        }
+      }
+
+      function getViewFromHash() {
+        const raw = window.location.hash.replace(/^#/, "");
+        return VIEW_META[raw] ? raw : "overview";
+      }
+
+      async function api(path, options = {}) {
+        const headers = {
+          "x-admin-key": state.adminKey,
+          ...(options.body ? { "content-type": "application/json" } : {}),
+          ...(options.headers || {}),
+        };
+
+        const res = await fetch(path, { ...options, headers });
+
+        let data;
+        try {
+          data = await res.json();
+        } catch {
+          data = null;
+        }
+
+        if (!res.ok) {
+          const msg = data?.error_description || data?.error || `Request failed: ${res.status}`;
+          const err = new Error(msg);
+          err.status = res.status;
+          throw err;
+        }
+
+        return data;
+      }
+
+      function updateMetrics() {
+        const totalClients = state.clients.length;
+        const activeClients = state.clients.filter((item) => item.active).length;
+        const pendingRequests = state.requests.filter((item) => item.status === "pending").length;
+        const activeTokens = state.tokens.filter((item) => tokenIsActive(item)).length;
+
+        refs.metricClients.textContent = String(totalClients);
+        refs.metricActiveClients.textContent = String(activeClients);
+        refs.metricPendingRequests.textContent = String(pendingRequests);
+        refs.metricActiveTokens.textContent = String(activeTokens);
+
+        refs.navCountOverview.textContent = `${totalClients + state.requests.length + state.tokens.length}`;
+        refs.navCountClients.textContent = String(totalClients);
+        refs.navCountRequests.textContent = String(state.requests.length);
+        refs.navCountTokens.textContent = String(activeTokens);
+      }
+
+      function renderOverviewTables() {
+        const latestRequests = [...state.requests]
+          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+          .slice(0, 8);
+
+        if (!latestRequests.length) {
+          refs.overviewRequestsBody.innerHTML = '<tr><td class="empty-row" colspan="4">暂无请求记录</td></tr>';
+        } else {
+          refs.overviewRequestsBody.innerHTML = latestRequests
+            .map((item) => {
+              return `
+                <tr>
+                  <td class="mono">${esc(item.requestId)}</td>
+                  <td>${esc(item.clientId)}</td>
+                  <td>${statusBadge(item.status)}</td>
+                  <td>${esc(formatTime(item.createdAt))}</td>
+                </tr>
+              `;
+            })
+            .join("");
+        }
+
+        const expiringTokens = state.tokens
+          .filter((item) => tokenIsActive(item))
+          .sort((a, b) => new Date(a.accessExpiresAt).getTime() - new Date(b.accessExpiresAt).getTime())
+          .slice(0, 8);
+
+        if (!expiringTokens.length) {
+          refs.overviewTokensBody.innerHTML = '<tr><td class="empty-row" colspan="4">暂无活跃 token</td></tr>';
+        } else {
+          refs.overviewTokensBody.innerHTML = expiringTokens
+            .map((item) => {
+              return `
+                <tr>
+                  <td class="mono">${esc(item.id)}</td>
+                  <td>${esc(item.clientId)}</td>
+                  <td>${esc(formatTime(item.accessExpiresAt))}</td>
+                  <td>${esc(timeLeft(item.accessExpiresAt))}</td>
+                </tr>
+              `;
+            })
+            .join("");
+        }
+      }
+
+      function getFilteredClients() {
+        const query = state.filters.clientsQuery.trim().toLowerCase();
+        const status = state.filters.clientsStatus;
+        return state.clients.filter((item) => {
+          if (status === "active" && !item.active) return false;
+          if (status === "disabled" && item.active) return false;
+
+          if (!query) return true;
+
+          const haystack = [
+            item.clientId,
+            item.name,
+            item.groupId,
+            item.description,
+            (item.scopes || []).join(" "),
+            (item.redirectUris || []).join(" "),
+          ]
+            .filter(Boolean)
+            .join(" ")
+            .toLowerCase();
+
+          return haystack.includes(query);
+        });
+      }
+
+      function renderClientsTable() {
+        const items = getFilteredClients();
+        if (!items.length) {
+          refs.clientsBody.innerHTML = '<tr><td class="empty-row" colspan="6">没有匹配的 client</td></tr>';
+          return;
+        }
+
+        refs.clientsBody.innerHTML = items
+          .map((item) => {
+            const scopes = (item.scopes || [])
+              .map((scope) => `<span class="scope-pill">${esc(scope)}</span>`)
+              .join("");
+            const scopeHtml = scopes || '<span class="scope-pill">none</span>';
+            const status = item.active
+              ? '<span class="status-badge ok">active</span>'
+              : '<span class="status-badge off">disabled</span>';
+
+            return `
+              <tr data-client-id="${esc(item.clientId)}">
+                <td class="mono">${esc(item.clientId)}</td>
+                <td>
+                  <strong>${esc(item.name || "-")}</strong>
+                  <div class="mono" style="margin-top: 4px; color: #666666">${esc(item.groupId || "-")}</div>
+                </td>
+                <td>${status}</td>
+                <td><div class="scope-list">${scopeHtml}</div></td>
+                <td>${Array.isArray(item.redirectUris) ? item.redirectUris.length : 0}</td>
+                <td>
+                  <div class="row-actions">
+                    <button class="btn btn-ghost btn-xs" data-action="edit" type="button">编辑</button>
+                    <button class="btn btn-warn btn-xs" data-action="toggle" type="button">${item.active ? "禁用" : "启用"}</button>
+                    <button class="btn btn-danger btn-xs" data-action="delete" type="button">删除</button>
+                  </div>
+                </td>
+              </tr>
+            `;
+          })
+          .join("");
+      }
+
+      function getFilteredRequests() {
+        const query = state.filters.requestsQuery.trim().toLowerCase();
+        const status = state.filters.requestsStatus;
+        return state.requests.filter((item) => {
+          if (status !== "all" && item.status !== status) return false;
+          if (!query) return true;
+          const haystack = [item.requestId, item.clientId, item.user?.userId, (item.scope || []).join(" ")]
+            .filter(Boolean)
+            .join(" ")
+            .toLowerCase();
+          return haystack.includes(query);
+        });
+      }
+
+      function renderRequestsTable() {
+        const items = getFilteredRequests();
+        if (!items.length) {
+          refs.requestsBody.innerHTML = '<tr><td class="empty-row" colspan="6">没有匹配的请求</td></tr>';
+          return;
+        }
+
+        refs.requestsBody.innerHTML = items
+          .map((item) => {
+            const userId = item.user?.userId || "-";
+            return `
+              <tr>
+                <td class="mono">${esc(item.requestId)}</td>
+                <td>${esc(item.clientId)}</td>
+                <td>${statusBadge(item.status)}</td>
+                <td class="mono">${esc(userId)}</td>
+                <td>${esc((item.scope || []).join(" "))}</td>
+                <td>${esc(formatTime(item.createdAt))}</td>
+              </tr>
+            `;
+          })
+          .join("");
+      }
+
+      function getFilteredTokens() {
+        const query = state.filters.tokensQuery.trim().toLowerCase();
+        const status = state.filters.tokensStatus;
+        return state.tokens.filter((item) => {
+          const active = tokenIsActive(item);
+          if (status === "active" && !active) return false;
+          if (status === "inactive" && active) return false;
+          if (!query) return true;
+          const haystack = [item.id, item.clientId, item.userId, (item.scope || []).join(" ")]
+            .filter(Boolean)
+            .join(" ")
+            .toLowerCase();
+          return haystack.includes(query);
+        });
+      }
+
+      function renderTokensTable() {
+        const items = getFilteredTokens();
+        if (!items.length) {
+          refs.tokensBody.innerHTML = '<tr><td class="empty-row" colspan="7">没有匹配的 token</td></tr>';
+          return;
+        }
+
+        refs.tokensBody.innerHTML = items
+          .map((item) => {
+            const active = tokenIsActive(item);
+            const tokenState = active
+              ? '<span class="token-state active">active</span>'
+              : '<span class="token-state inactive">inactive</span>';
+
+            return `
+              <tr>
+                <td class="mono">${esc(item.id)}</td>
+                <td>${esc(item.clientId)}</td>
+                <td class="mono">${esc(item.userId)}</td>
+                <td>${esc((item.scope || []).join(" "))}</td>
+                <td>${esc(formatTime(item.accessExpiresAt))}</td>
+                <td>${tokenState}</td>
+                <td>
+                  <button data-token-id="${esc(item.id)}" class="btn btn-danger btn-xs" type="button" ${item.revokedAt ? "disabled" : ""}>
+                    revoke
+                  </button>
+                </td>
+              </tr>
+            `;
+          })
+          .join("");
+      }
+
+      function renderAll() {
+        updateMetrics();
+        renderOverviewTables();
+        renderClientsTable();
+        renderRequestsTable();
+        renderTokensTable();
+      }
+
+      function openClientModal(mode, client) {
+        modalState.mode = mode;
+        modalState.clientId = client?.clientId || "";
+
+        refs.modalTitle.textContent = mode === "create" ? "Create Client" : `Edit Client: ${client.clientId}`;
+        refs.formClientId.disabled = mode === "edit";
+
+        refs.formClientId.value = client?.clientId || "";
+        refs.formName.value = client?.name || "";
+        refs.formGroupId.value = client?.groupId || "";
+        refs.formClientSecret.value = "";
+        refs.formPicture.value = client?.picture || "";
+        refs.formDescription.value = client?.description || "";
+        refs.formRedirectUris.value = (client?.redirectUris || []).join("\n");
+        refs.formScopes.value = (client?.scopes || []).join("\n");
+        refs.formActive.checked = client ? Boolean(client.active) : true;
+
+        refs.clientModal.classList.remove("hidden");
+      }
+
+      function closeClientModal() {
+        refs.clientModal.classList.add("hidden");
+      }
+
+      function lockApp(message) {
+        state.adminKey = "";
+        state.authed = false;
+        state.clients = [];
+        state.requests = [];
+        state.tokens = [];
+
+        localStorage.removeItem("amepx_admin_key");
+        refs.loginToken.value = "";
+        setAuthed(false);
+        renderAll();
+
+        if (message) {
+          pushToast(message, "warn", 4200);
+        }
+      }
+
+      async function refreshClients() {
+        const res = await api("/api/admin/clients?include_inactive=true");
+        state.clients = res.items || [];
+      }
+
+      async function refreshRequests() {
+        const res = await api("/api/admin/requests?limit=30");
+        state.requests = res.items || [];
+      }
+
+      async function refreshTokens() {
+        const res = await api("/api/admin/tokens?limit=50");
+        state.tokens = res.items || [];
+      }
+
+      async function refreshAll(options = {}) {
+        const silent = Boolean(options.silent);
+        if (!silent) pushToast("正在刷新数据...", "info", 1200);
+        setSyncChip("同步中...", "working");
+
+        try {
+          await Promise.all([refreshClients(), refreshRequests(), refreshTokens()]);
+          renderAll();
+          setSyncChip(`已同步 ${formatTime(new Date())}`, "ok");
+          if (!silent) pushToast("刷新完成", "success");
+        } catch (error) {
+          if (error.status === 401) {
+            lockApp("令牌已失效，请重新验证");
+            return;
+          }
+          setSyncChip("同步失败", "error");
+          pushToast(String(error), "error", 4600);
+        }
+      }
+
+      async function verifyTokenAndEnter(token) {
+        if (!token) {
+          pushToast("请输入令牌", "warn");
+          return;
+        }
+
+        state.adminKey = token;
+        refs.loginBtn.disabled = true;
+        refs.loginBtn.textContent = "验证中...";
+
+        try {
+          await api("/api/admin/clients?include_inactive=true");
+          localStorage.setItem("amepx_admin_key", token);
+          setAuthed(true);
+          setView(getViewFromHash(), { fromHash: true });
+          await refreshAll({ silent: true });
+          pushToast("验证成功，已进入管理面板", "success");
+        } catch (error) {
+          state.adminKey = "";
+          localStorage.removeItem("amepx_admin_key");
+          setAuthed(false);
+          pushToast(String(error), "error", 4600);
+        } finally {
+          refs.loginBtn.disabled = false;
+          refs.loginBtn.textContent = "验证并进入";
+        }
+      }
+
+      refs.loginBtn.addEventListener("click", () => {
+        verifyTokenAndEnter(refs.loginToken.value.trim());
+      });
+
+      refs.loginToken.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          verifyTokenAndEnter(refs.loginToken.value.trim());
+        }
+      });
+
+      refs.navButtons.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          setView(btn.dataset.view || "overview");
+        });
+      });
+
+      window.addEventListener("hashchange", () => {
+        setView(getViewFromHash(), { fromHash: true });
+      });
+
+      refs.refreshBtn.addEventListener("click", () => {
+        refreshAll();
+      });
+
+      refs.logoutBtn.addEventListener("click", () => {
+        lockApp("已退出，请重新输入令牌");
+      });
+
+      refs.clientsSearch.addEventListener("input", (event) => {
+        state.filters.clientsQuery = String(event.target.value || "");
+        renderClientsTable();
+      });
+
+      refs.clientsFilter.addEventListener("change", (event) => {
+        state.filters.clientsStatus = String(event.target.value || "all");
+        renderClientsTable();
+      });
+
+      refs.requestsSearch.addEventListener("input", (event) => {
+        state.filters.requestsQuery = String(event.target.value || "");
+        renderRequestsTable();
+      });
+
+      refs.requestsFilter.addEventListener("change", (event) => {
+        state.filters.requestsStatus = String(event.target.value || "all");
+        renderRequestsTable();
+      });
+
+      refs.tokensSearch.addEventListener("input", (event) => {
+        state.filters.tokensQuery = String(event.target.value || "");
+        renderTokensTable();
+      });
+
+      refs.tokensFilter.addEventListener("change", (event) => {
+        state.filters.tokensStatus = String(event.target.value || "all");
+        renderTokensTable();
+      });
+
+      refs.createClientBtn.addEventListener("click", () => {
+        openClientModal("create");
+      });
+
+      refs.modalClose.addEventListener("click", closeClientModal);
+      refs.formCancel.addEventListener("click", closeClientModal);
+      refs.modalBackdrop.addEventListener("click", closeClientModal);
+
+      refs.clientForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        const payload = {
+          name: String(refs.formName.value || "").trim(),
+          groupId: String(refs.formGroupId.value || "").trim(),
+          clientSecret: String(refs.formClientSecret.value || "").trim(),
+          picture: String(refs.formPicture.value || "").trim(),
+          description: String(refs.formDescription.value || "").trim(),
+          redirectUris: parseList(refs.formRedirectUris.value),
+          scopes: parseList(refs.formScopes.value),
+          active: refs.formActive.checked,
+        };
+
+        try {
+          if (modalState.mode === "create") {
+            const createPayload = {
+              ...payload,
+              clientId: String(refs.formClientId.value || "").trim(),
+            };
+            await api("/api/admin/clients", {
+              method: "POST",
+              body: JSON.stringify(createPayload),
+            });
+            pushToast(`Client 创建成功: ${createPayload.clientId}`, "success");
+          } else {
+            await api(`/api/admin/clients/${encodeURIComponent(modalState.clientId)}`, {
+              method: "PATCH",
+              body: JSON.stringify(payload),
+            });
+            pushToast(`Client 已更新: ${modalState.clientId}`, "success");
+          }
+
+          closeClientModal();
+          await refreshClients();
+          renderAll();
+        } catch (error) {
+          pushToast(String(error), "error", 4600);
+        }
+      });
+
+      refs.clientsBody.addEventListener("click", async (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLButtonElement)) return;
+
+        const row = target.closest("tr");
+        if (!row) return;
+        const clientId = row.getAttribute("data-client-id");
+        if (!clientId) return;
+
+        const action = target.dataset.action;
+        const client = state.clients.find((item) => item.clientId === clientId);
+        if (!client) return;
+
+        try {
+          if (action === "edit") {
+            openClientModal("edit", client);
+            return;
+          }
+
+          if (action === "toggle") {
+            await api(`/api/admin/clients/${encodeURIComponent(clientId)}`, {
+              method: "PATCH",
+              body: JSON.stringify({ active: !client.active }),
+            });
+            await refreshClients();
+            renderAll();
+            pushToast(`状态已更新: ${clientId}`, "success");
+            return;
+          }
+
+          if (action === "delete") {
+            if (!window.confirm(`确认删除 client ${clientId} ?`)) return;
+            await api(`/api/admin/clients/${encodeURIComponent(clientId)}`, {
+              method: "DELETE",
+            });
+            await refreshClients();
+            renderAll();
+            pushToast(`已删除 ${clientId}`, "warn");
+          }
+        } catch (error) {
+          pushToast(String(error), "error", 4600);
+        }
+      });
+
+      refs.tokensBody.addEventListener("click", async (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLButtonElement)) return;
+
+        const tokenId = target.getAttribute("data-token-id");
+        if (!tokenId) return;
+
+        try {
+          await api(`/api/admin/tokens/${encodeURIComponent(tokenId)}/revoke`, {
+            method: "POST",
+          });
+          await refreshTokens();
+          renderAll();
+          pushToast(`Token 已 revoke: ${tokenId}`, "warn");
+        } catch (error) {
+          pushToast(String(error), "error", 4600);
+        }
+      });
+
+      renderAll();
+      setView(getViewFromHash(), { fromHash: true });
+
+      if (state.adminKey) {
+        verifyTokenAndEnter(state.adminKey);
+      } else {
+        setAuthed(false);
+      }
+    </script>
+  </body>
+</html>
