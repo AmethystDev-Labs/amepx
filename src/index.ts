@@ -4,7 +4,7 @@ import { validateEnv } from "./utils/check_env.js";
 import { router } from "./router/router.js";
 import { adminPanelRouter } from "./router/admin/panel.js";
 import { wellKnownRouter } from "./router/well-known.js";
-import { indexRouter } from "./router/index/index.js";
+import { indexRouter } from "./router/index/page.js";
 import { Logger, type LoggerType } from "./utils/logger.js";
 import { init } from "./server.js";
 import { openapi, fromTypes } from "@elysiajs/openapi";
