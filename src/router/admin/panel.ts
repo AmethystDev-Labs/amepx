@@ -9,7 +9,7 @@ async function getAdminPage(): Promise<string> {
         return pageCache;
     }
 
-    const pagePath = path.resolve(process.cwd(), "src/templete/admin.html");
+    const pagePath = path.resolve(process.cwd(), "src/web/admin.html");
     pageCache = await readFile(pagePath, "utf-8");
     return pageCache;
 }

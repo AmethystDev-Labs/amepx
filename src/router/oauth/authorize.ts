@@ -33,7 +33,7 @@ async function getAuthorizeTemplate(): Promise<string> {
         return authorizeTemplateCache;
     }
 
-    const templatePath = path.resolve(process.cwd(), "src/templete/authorize.eta");
+    const templatePath = path.resolve(process.cwd(), "src/web/authorize.eta");
     authorizeTemplateCache = await readFile(templatePath, "utf-8");
     return authorizeTemplateCache;
 }
