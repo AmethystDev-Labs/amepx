@@ -1,6 +1,33 @@
-import { createHmac } from "node:crypto";
+import {
+    createHash,
+    createPrivateKey,
+    createPublicKey,
+    generateKeyPairSync,
+    sign,
+    type KeyObject,
+} from "node:crypto";
 
 export const OIDC_DEFAULT_SCOPES = ["openid", "profile", "email"] as const;
+export const DEFAULT_OAUTH_ISSUER = "https://amepx.0xd3ac.dev";
+const OIDC_ID_TOKEN_SIGNING_ALG = "RS256";
+
+type OidcJwk = {
+    kty: "RSA";
+    use: "sig";
+    alg: typeof OIDC_ID_TOKEN_SIGNING_ALG;
+    kid: string;
+    n: string;
+    e: string;
+};
+
+type OidcSigningKeyMaterial = {
+    kid: string;
+    privateKey: KeyObject;
+    publicKey: KeyObject;
+    publicJwk: OidcJwk;
+};
+
+let signingKeyMaterialCache: OidcSigningKeyMaterial | null = null;
 
 function toBase64Url(value: string): string {
     return Buffer.from(value, "utf-8").toString("base64url");
@@ -14,14 +41,111 @@ function hasScope(scope: string[], expected: string): boolean {
     return scope.includes(expected);
 }
 
-export function resolveIssuer(request: Request): string {
-    const configured = (process.env.OAUTH_ISSUER ?? "").trim();
-    if (configured) {
-        return trimTrailingSlash(configured);
+function normalizePem(value: string): string {
+    return value.replace(/\\n/g, "\n").trim();
+}
+
+function normalizeIssuer(value: string): string | null {
+    const trimmed = value.trim();
+    if (!trimmed) {
+        return null;
     }
 
-    const url = new URL(request.url);
-    return trimTrailingSlash(`${url.protocol}//${url.host}`);
+    try {
+        const url = new URL(trimmed);
+        return trimTrailingSlash(url.toString());
+    } catch {
+        return null;
+    }
+}
+
+function buildOidcKeyMaterial(
+    privateKey: KeyObject,
+    publicKey: KeyObject,
+    configuredKid?: string,
+): OidcSigningKeyMaterial {
+    const exported = publicKey.export({ format: "jwk" }) as JsonWebKey;
+    if (exported.kty !== "RSA" || typeof exported.n !== "string" || typeof exported.e !== "string") {
+        throw new Error("OIDC signing public key must be an RSA key");
+    }
+
+    const publicDer = publicKey.export({ type: "spki", format: "der" });
+    const kid =
+        configuredKid?.trim() ||
+        createHash("sha256").update(publicDer).digest("base64url").slice(0, 16);
+
+    return {
+        kid,
+        privateKey,
+        publicKey,
+        publicJwk: {
+            kty: "RSA",
+            use: "sig",
+            alg: OIDC_ID_TOKEN_SIGNING_ALG,
+            kid,
+            n: exported.n,
+            e: exported.e,
+        },
+    };
+}
+
+function getOidcSigningKeyMaterial(): OidcSigningKeyMaterial {
+    if (signingKeyMaterialCache) {
+        return signingKeyMaterialCache;
+    }
+
+    const privateKeyPem = normalizePem(process.env.OIDC_PRIVATE_KEY_PEM ?? "");
+    const publicKeyPem = normalizePem(process.env.OIDC_PUBLIC_KEY_PEM ?? "");
+    const configuredKid = (process.env.OIDC_KEY_ID ?? "").trim() || undefined;
+
+    if (privateKeyPem) {
+        const privateKey = createPrivateKey(privateKeyPem);
+        const publicKey = publicKeyPem
+            ? createPublicKey(publicKeyPem)
+            : createPublicKey(privateKey);
+        signingKeyMaterialCache = buildOidcKeyMaterial(privateKey, publicKey, configuredKid);
+        return signingKeyMaterialCache;
+    }
+
+    const generated = generateKeyPairSync("rsa", {
+        modulusLength: 2048,
+    });
+
+    signingKeyMaterialCache = buildOidcKeyMaterial(
+        generated.privateKey,
+        generated.publicKey,
+        configuredKid,
+    );
+    return signingKeyMaterialCache;
+}
+
+export function resolveIssuer(request: Request): string {
+    const configured = normalizeIssuer(process.env.OAUTH_ISSUER ?? "");
+    if (configured) {
+        return configured;
+    }
+
+    const requestIssuer = normalizeIssuer(new URL(request.url).origin);
+    if (requestIssuer) {
+        return requestIssuer;
+    }
+
+    return DEFAULT_OAUTH_ISSUER;
+}
+
+export function getOidcJwks(): { keys: OidcJwk[] } {
+    const keyMaterial = getOidcSigningKeyMaterial();
+    return {
+        keys: [keyMaterial.publicJwk],
+    };
+}
+
+export function getOidcJwksUri(issuer: string): string {
+    return `${trimTrailingSlash(issuer)}/.well-known/jwks.json`;
+}
+
+export function getOidcIdTokenSigningAlg(): typeof OIDC_ID_TOKEN_SIGNING_ALG {
+    return OIDC_ID_TOKEN_SIGNING_ALG;
 }
 
 export function buildStandardUserClaims(params: {
@@ -68,6 +192,7 @@ export function buildIdToken(params: {
     authTimeSeconds?: number;
 }): string {
     const now = Math.floor(Date.now() / 1000);
+    const keyMaterial = getOidcSigningKeyMaterial();
 
     const payload: Record<string, unknown> = {
         iss: params.issuer,
@@ -90,16 +215,16 @@ export function buildIdToken(params: {
     }
 
     const header = {
-        alg: "HS256",
+        alg: OIDC_ID_TOKEN_SIGNING_ALG,
         typ: "JWT",
+        kid: keyMaterial.kid,
     };
 
     const encodedHeader = toBase64Url(JSON.stringify(header));
     const encodedPayload = toBase64Url(JSON.stringify(payload));
     const unsignedToken = `${encodedHeader}.${encodedPayload}`;
-
-    const secret = process.env.SECRET_KEY || "fallback-secret-key";
-    const signature = createHmac("sha256", secret).update(unsignedToken).digest("base64url");
+    const signature = sign("RSA-SHA256", Buffer.from(unsignedToken, "utf-8"), keyMaterial.privateKey)
+        .toString("base64url");
 
     return `${unsignedToken}.${signature}`;
 }

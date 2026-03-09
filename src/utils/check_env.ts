@@ -19,6 +19,9 @@ interface Env {
   ONEBOT_ACCESS_TOKEN?: string;
   ONEBOT_GROUP_HISTORY_COUNT?: number;
   OAUTH_ISSUER?: string;
+  OIDC_PRIVATE_KEY_PEM?: string;
+  OIDC_PUBLIC_KEY_PEM?: string;
+  OIDC_KEY_ID?: string;
   OAUTH_CODE_TTL_SECONDS?: number;
   OAUTH_ACCESS_TOKEN_TTL_SECONDS?: number;
   OAUTH_REFRESH_TOKEN_TTL_SECONDS?: number;

@@ -7,6 +7,7 @@ export const oauthAuthorizationServerMetadataSchema = withDoc(
         authorization_endpoint: t.String({ minLength: 1 }),
         token_endpoint: t.String({ minLength: 1 }),
         userinfo_endpoint: t.String({ minLength: 1 }),
+        jwks_uri: t.String({ minLength: 1 }),
         response_types_supported: t.Array(t.String()),
         grant_types_supported: t.Array(t.String()),
         token_endpoint_auth_methods_supported: t.Array(t.String()),
@@ -23,6 +24,7 @@ export const openidConfigurationSchema = withDoc(
         authorization_endpoint: t.String({ minLength: 1 }),
         token_endpoint: t.String({ minLength: 1 }),
         userinfo_endpoint: t.String({ minLength: 1 }),
+        jwks_uri: t.String({ minLength: 1 }),
         response_types_supported: t.Array(t.String()),
         response_modes_supported: t.Array(t.String()),
         grant_types_supported: t.Array(t.String()),
@@ -38,5 +40,28 @@ export const openidConfigurationSchema = withDoc(
     }),
     {
         description: "OpenID Connect discovery document.",
+    },
+);
+
+export const jwkSchema = withDoc(
+    t.Object({
+        kty: t.Literal("RSA"),
+        use: t.Literal("sig"),
+        alg: t.Literal("RS256"),
+        kid: t.String({ minLength: 1 }),
+        n: t.String({ minLength: 1 }),
+        e: t.String({ minLength: 1 }),
+    }),
+    {
+        description: "Public RSA signing key exposed through JWKS.",
+    },
+);
+
+export const jwksResponseSchema = withDoc(
+    t.Object({
+        keys: t.Array(jwkSchema),
+    }),
+    {
+        description: "JSON Web Key Set for OpenID Connect ID token verification.",
     },
 );

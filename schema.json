@@ -50,6 +50,21 @@
       "minLength": 1,
       "description": "Public issuer URL used by well-known discovery endpoints"
     },
+    "OIDC_PRIVATE_KEY_PEM": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Optional RSA private key in PEM format used to sign OIDC ID tokens with RS256"
+    },
+    "OIDC_PUBLIC_KEY_PEM": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Optional RSA public key in PEM format exposed through the JWKS endpoint"
+    },
+    "OIDC_KEY_ID": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Optional stable key ID (kid) advertised in JWKS and ID token headers"
+    },
     "OAUTH_CODE_TTL_SECONDS": {
       "type": "number",
       "minimum": 1,
