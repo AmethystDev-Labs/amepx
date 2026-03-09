@@ -5,6 +5,22 @@ import {
 } from "../models/router/well-known.js";
 import { OIDC_DEFAULT_SCOPES } from "../utils/oidc.js";
 
+const OIDC_CLAIMS_SUPPORTED = [
+    "sub",
+    "name",
+    "nickname",
+    "preferred_username",
+    "picture",
+    "updated_at",
+    "email",
+    "email_verified",
+    "client_id",
+    "group_id",
+    "scope",
+    "card",
+    "avatar",
+] as const;
+
 function trimTrailingSlash(value: string): string {
     return value.replace(/\/+$/, "");
 }
@@ -55,26 +71,22 @@ export const wellKnownRouter = new Elysia()
     )
     .get(
         "/.well-known/openid-configuration",
-        ({ request }) => {
+        ({ request, set }) => {
             const issuer = resolveIssuer(request);
             const metadata = makeMetadata(issuer);
+            set.headers["access-control-allow-origin"] = "*";
+            set.headers["access-control-allow-methods"] = "GET, OPTIONS";
 
             return {
                 ...metadata,
+                response_modes_supported: ["query"],
                 subject_types_supported: ["public"],
                 id_token_signing_alg_values_supported: ["HS256"],
-                claims_supported: [
-                    "sub",
-                    "name",
-                    "nickname",
-                    "preferred_username",
-                    "picture",
-                    "email",
-                    "email_verified",
-                    "client_id",
-                    "group_id",
-                    "scope",
-                ],
+                claim_types_supported: ["normal"],
+                claims_parameter_supported: false,
+                request_parameter_supported: false,
+                request_uri_parameter_supported: false,
+                claims_supported: [...OIDC_CLAIMS_SUPPORTED],
             };
         },
         {
