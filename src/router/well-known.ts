@@ -13,6 +13,7 @@ import {
 } from "../utils/oidc.js";
 
 const OIDC_CLAIMS_SUPPORTED = [
+    "id",
     "sub",
     "name",
     "nickname",

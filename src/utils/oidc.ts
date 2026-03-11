@@ -157,6 +157,7 @@ export function buildStandardUserClaims(params: {
 }): Record<string, unknown> {
     const sub = String(params.userId);
     const claims: Record<string, unknown> = {
+        id: `qq_${sub}`,
         sub,
     };
 

@@ -77,6 +77,7 @@ export const userInfoRouter = new Elysia({ prefix: "/user" }).get(
 
         return {
             ...oidcClaims,
+            id: `qq_${tokenDoc.userId}`,
             sub: tokenDoc.userId,
             client_id: tokenDoc.clientId,
             group_id: tokenDoc.groupId,
