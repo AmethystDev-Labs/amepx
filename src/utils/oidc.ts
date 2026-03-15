@@ -173,7 +173,7 @@ export function buildStandardUserClaims(params: {
     }
 
     if (hasScope(params.scope, "email")) {
-        claims.email = `qquser_${sub}@dart.cc.cd`;
+        claims.email = `${sub}@qq.com`;
         claims.email_verified = true;
     }
 
