@@ -1,274 +1,290 @@
-import { Elysia, t } from "elysia";
 import { withDoc } from "@elysiajs/openapi";
+import { Elysia, t } from "elysia";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { ensureMongoConnected } from "../../models/db/connection.js";
-import { OAuthClientModel } from "../../models/db/client.js";
 import { OAuthAuthorizationRequestModel } from "../../models/db/auth_request.js";
-import {
-    generateAuthorizationCode,
-    generateRequestId,
-    getOAuthCodeTtlSeconds,
-    normalizeScope,
-} from "../../utils/oauth.js";
+import { OAuthClientModel } from "../../models/db/client.js";
+import { ensureMongoConnected } from "../../models/db/connection.js";
+import * as authorize from "../../models/router/oauth/authorize.js";
+import * as oauth from "../../utils/oauth.js";
 import { OIDC_DEFAULT_SCOPES } from "../../utils/oidc.js";
-import {
-    oauthAuthorizeErrorSchema,
-    oauthAuthorizeQuerySchema,
-} from "../../models/router/oauth/authorize.js";
 
 let authorizeTemplateCache: string | null = null;
 
 function escapeHtml(raw: string): string {
-    return raw
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#39;");
+  return raw
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
 }
 
 async function getAuthorizeTemplate(): Promise<string> {
-    if (authorizeTemplateCache) {
-        return authorizeTemplateCache;
-    }
-
-    const templatePath = path.resolve(process.cwd(), "src/web/authorize.eta");
-    authorizeTemplateCache = await readFile(templatePath, "utf-8");
+  if (authorizeTemplateCache) {
     return authorizeTemplateCache;
+  }
+
+  const templatePath = path.resolve(process.cwd(), "src/web/authorize.eta");
+  authorizeTemplateCache = await readFile(templatePath, "utf-8");
+  return authorizeTemplateCache;
 }
 
-async function renderAuthorizeTemplate(payload: Record<string, string>): Promise<string> {
-    const template = await getAuthorizeTemplate();
+async function renderAuthorizeTemplate(
+  payload: Record<string, string>,
+): Promise<string> {
+  const template = await getAuthorizeTemplate();
 
-    // The current template has one setup block at the top; remove it for lightweight interpolation.
-    const body = template.replace(/^<%[\s\S]*?%>\s*/, "");
+  // The current template has one setup block at the top; remove it for lightweight interpolation.
+  const body = template.replace(/^<%[\s\S]*?%>\s*/, "");
 
-    return body.replace(/<%=\s*([A-Z_]+)\s*%>/g, (_fullMatch, key: string) => {
-        return escapeHtml(payload[key] ?? "");
-    });
+  return body.replace(/<%=\s*([A-Z_]+)\s*%>/g, (_fullMatch, key: string) => {
+    return escapeHtml(payload[key] ?? "");
+  });
 }
 
-function oauthErrorResponse(status: number, error: string, errorDescription: string): Response {
-    return new Response(
-        JSON.stringify({
-            error,
-            error_description: errorDescription,
-        }),
-        {
-            status,
-            headers: {
-                "content-type": "application/json; charset=utf-8",
-            },
-        },
-    );
+function oauthErrorResponse(
+  status: number,
+  error: string,
+  errorDescription: string,
+): Response {
+  return new Response(
+    JSON.stringify({
+      error,
+      error_description: errorDescription,
+    }),
+    {
+      status,
+      headers: {
+        "content-type": "application/json; charset=utf-8",
+      },
+    },
+  );
 }
 
 async function generateUniqueCode(): Promise<string> {
-    for (let attempt = 0; attempt < 8; attempt += 1) {
-        const code = generateAuthorizationCode(6);
-        const exists = await OAuthAuthorizationRequestModel.exists({
-            code,
-            status: { $in: ["pending", "approved"] },
-            codeExpiresAt: { $gt: new Date() },
-        });
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    const code = oauth.generateAuthorizationCode(6);
+    const exists = await OAuthAuthorizationRequestModel.exists({
+      code,
+      status: { $in: ["pending", "approved"] },
+      codeExpiresAt: { $gt: new Date() },
+    });
 
-        if (!exists) {
-            return code;
-        }
+    if (!exists) {
+      return code;
     }
+  }
 
-    throw new Error("Failed to generate unique authorization code");
+  throw new Error("Failed to generate unique authorization code");
 }
 
-export const oauthAuthorizeRouter = new Elysia({ prefix: "/oauth" }).get(
+export const oauthAuthorizeRouter = new Elysia({ prefix: "/oauth" })
+  .get(
     "/authorize/demo",
     async ({ query, request }) => {
-        const requestUrl = new URL(request.url);
-        const fallbackRedirect = `${requestUrl.origin}/oauth/oidc`;
+      const requestUrl = new URL(request.url);
+      const fallbackRedirect = `${requestUrl.origin}/oauth/oidc`;
 
-        const code = String(query.code || "935420");
-        const clientName = String(query.client_name || "AmethystAPI");
-        const clientPicture = String(
-            query.client_picture || "https://placehold.co/96x96/png?text=A",
-        );
-        const clientDescription = String(
-            query.client_description || "Amepx OAuth2/OIDC Demo Client",
-        );
-        const groupId = String(query.group_id || "1039716984");
-        const requestId = String(
-            query.request_id || "demo_request_5a9e807b177e5bf373d7cee37604747",
-        );
-        const redirectUri = String(query.redirect_uri || fallbackRedirect);
-        const state = String(query.state || "demo_state_XY12");
-        const scopes = String(query.scope || "openid profile email");
+      const code = String(query.code || "935420");
+      const clientName = String(query.client_name || "AmethystAPI");
+      const clientPicture = String(
+        query.client_picture || "https://placehold.co/96x96/png?text=A",
+      );
+      const clientDescription = String(
+        query.client_description || "Amepx OAuth2/OIDC Demo Client",
+      );
+      const groupId = String(query.group_id || "1039716984");
+      const requestId = String(
+        query.request_id || "demo_request_5a9e807b177e5bf373d7cee37604747",
+      );
+      const redirectUri = String(query.redirect_uri || fallbackRedirect);
+      const state = String(query.state || "demo_state_XY12");
+      const scopes = String(query.scope || "openid profile email");
 
-        const html = await renderAuthorizeTemplate({
-            REQUEST_ID: requestId,
-            REQUEST_ID_DISPLAY: requestId || "-",
-            CODE: code,
-            CLIENTNAME: clientName,
-            CLIENTPICTURE: clientPicture,
-            CLIENT_DESCRIPTION: clientDescription,
-            GROUP_ID: groupId,
-            REDIRECT_URI: redirectUri,
-            REDIRECT_URI_DISPLAY: redirectUri || "-",
-            STATE: state,
-            STATE_DISPLAY: state || "-",
-            SCOPES: scopes,
-            SCOPES_DISPLAY: scopes || "-",
-        });
+      const html = await renderAuthorizeTemplate({
+        REQUEST_ID: requestId,
+        REQUEST_ID_DISPLAY: requestId || "-",
+        CODE: code,
+        CLIENTNAME: clientName,
+        CLIENTPICTURE: clientPicture,
+        CLIENT_DESCRIPTION: clientDescription,
+        GROUP_ID: groupId,
+        REDIRECT_URI: redirectUri,
+        REDIRECT_URI_DISPLAY: redirectUri || "-",
+        STATE: state,
+        STATE_DISPLAY: state || "-",
+        SCOPES: scopes,
+        SCOPES_DISPLAY: scopes || "-",
+      });
 
-        return new Response(html, {
-            headers: {
-                "content-type": "text/html; charset=utf-8",
-            },
-        });
+      return new Response(html, {
+        headers: {
+          "content-type": "text/html; charset=utf-8",
+        },
+      });
     },
     {
-        query: t.Object({
-            code: t.Optional(t.String()),
-            client_name: t.Optional(t.String()),
-            client_picture: t.Optional(t.String()),
-            client_description: t.Optional(t.String()),
-            group_id: t.Optional(t.String()),
-            request_id: t.Optional(t.String()),
-            redirect_uri: t.Optional(t.String()),
-            state: t.Optional(t.String()),
-            scope: t.Optional(t.String()),
+      query: t.Object({
+        code: t.Optional(t.String()),
+        client_name: t.Optional(t.String()),
+        client_picture: t.Optional(t.String()),
+        client_description: t.Optional(t.String()),
+        group_id: t.Optional(t.String()),
+        request_id: t.Optional(t.String()),
+        redirect_uri: t.Optional(t.String()),
+        state: t.Optional(t.String()),
+        scope: t.Optional(t.String()),
+      }),
+      response: {
+        200: withDoc(t.String(), {
+          description: "Authorization page demo HTML (mock data).",
+          content: {
+            "text/html": {
+              schema: {
+                type: "string",
+              },
+            },
+          },
+          headers: {
+            "content-type": t.String({ minLength: 1 }),
+          },
         }),
-        response: {
-            200: withDoc(t.String(), {
-                description: "Authorization page demo HTML (mock data).",
-                content: {
-                    "text/html": {
-                        schema: {
-                            type: "string",
-                        },
-                    },
-                },
-                headers: {
-                    "content-type": t.String({ minLength: 1 }),
-                },
-            }),
-        },
+      },
     },
-).get(
+  )
+  .get(
     "/authorize",
     async ({ query }) => {
-        if (query.response_type !== "code") {
-            return oauthErrorResponse(
-                400,
-                "unsupported_response_type",
-                "Only response_type=code is supported",
-            );
-        }
+      if (query.response_type !== "code") {
+        return oauthErrorResponse(
+          400,
+          "unsupported_response_type",
+          "Only response_type=code is supported",
+        );
+      }
 
-        await ensureMongoConnected();
+      await ensureMongoConnected();
 
-        const client = await OAuthClientModel.findOne({
-            clientId: query.client_id,
-            active: true,
-        }).lean();
+      const client = await OAuthClientModel.findOne({
+        clientId: query.client_id,
+        active: true,
+      }).lean();
 
-        if (!client) {
-            return oauthErrorResponse(400, "invalid_client", "Unknown or inactive client_id");
-        }
+      if (!client) {
+        return oauthErrorResponse(
+          400,
+          "invalid_client",
+          "Unknown or inactive client_id",
+        );
+      }
 
-        let redirectUri = query.redirect_uri;
-        if (!redirectUri && client.redirectUris.length === 1) {
-            redirectUri = client.redirectUris[0];
-        }
+      let redirectUri = query.redirect_uri;
+      if (!redirectUri && client.redirectUris.length === 1) {
+        redirectUri = client.redirectUris[0];
+      }
 
-        if (!redirectUri) {
-            return oauthErrorResponse(400, "invalid_request", "redirect_uri is required");
-        }
+      if (!redirectUri) {
+        return oauthErrorResponse(
+          400,
+          "invalid_request",
+          "redirect_uri is required",
+        );
+      }
 
-        if (!client.redirectUris.includes(redirectUri)) {
-            return oauthErrorResponse(400, "invalid_request", "redirect_uri is not registered");
-        }
+      if (!client.redirectUris.includes(redirectUri)) {
+        return oauthErrorResponse(
+          400,
+          "invalid_request",
+          "redirect_uri is not registered",
+        );
+      }
 
-        const requestedScope = normalizeScope(query.scope);
-        const allowedScopes = new Set<string>([
-            ...client.scopes,
-            ...OIDC_DEFAULT_SCOPES,
-        ]);
-        if (requestedScope.some((scopeItem) => !allowedScopes.has(scopeItem))) {
-            return oauthErrorResponse(400, "invalid_scope", "Requested scope is not allowed");
-        }
+      const requestedScope = oauth.normalizeScope(query.scope);
+      const allowedScopes = new Set<string>([
+        ...client.scopes,
+        ...OIDC_DEFAULT_SCOPES,
+      ]);
+      if (requestedScope.some((scopeItem) => !allowedScopes.has(scopeItem))) {
+        return oauthErrorResponse(
+          400,
+          "invalid_scope",
+          "Requested scope is not allowed",
+        );
+      }
 
-        const scope =
-            requestedScope.length > 0
-                ? requestedScope
-                : client.scopes.length > 0
-                  ? client.scopes
-                  : [...OIDC_DEFAULT_SCOPES];
-        const groupId = query.group_id || client.groupId;
-        if (!groupId) {
-            return oauthErrorResponse(
-                400,
-                "invalid_request",
-                "group_id is required (query.group_id or client.groupId)",
-            );
-        }
+      const scope =
+        requestedScope.length > 0
+          ? requestedScope
+          : client.scopes.length > 0
+            ? client.scopes
+            : [...OIDC_DEFAULT_SCOPES];
+      const groupId = query.group_id || client.groupId;
+      if (!groupId) {
+        return oauthErrorResponse(
+          400,
+          "invalid_request",
+          "group_id is required (query.group_id or client.groupId)",
+        );
+      }
 
-        const code = await generateUniqueCode();
-        const requestId = generateRequestId();
-        const codeTtlSeconds = getOAuthCodeTtlSeconds();
-        const codeExpiresAt = new Date(Date.now() + codeTtlSeconds * 1000);
+      const code = await generateUniqueCode();
+      const requestId = oauth.generateRequestId();
+      const codeTtlSeconds = oauth.getOAuthCodeTtlSeconds();
+      const codeExpiresAt = new Date(Date.now() + codeTtlSeconds * 1000);
 
-        await OAuthAuthorizationRequestModel.create({
-            requestId,
-            clientId: client.clientId,
-            redirectUri,
-            state: query.state,
-            nonce: query.nonce,
-            scope,
-            groupId,
-            code,
-            codeExpiresAt,
-            status: "pending",
-        });
+      await OAuthAuthorizationRequestModel.create({
+        requestId,
+        clientId: client.clientId,
+        redirectUri,
+        state: query.state,
+        nonce: query.nonce,
+        scope,
+        groupId,
+        code,
+        codeExpiresAt,
+        status: "pending",
+      });
 
-        const html = await renderAuthorizeTemplate({
-            REQUEST_ID: requestId,
-            REQUEST_ID_DISPLAY: requestId || "-",
-            CODE: code,
-            CLIENTNAME: client.name,
-            CLIENTPICTURE: client.picture || "https://placehold.co/96x96/png",
-            CLIENT_DESCRIPTION: client.description || "No description",
-            GROUP_ID: String(groupId),
-            REDIRECT_URI: redirectUri,
-            REDIRECT_URI_DISPLAY: redirectUri || "-",
-            STATE: query.state || "",
-            STATE_DISPLAY: query.state || "-",
-            SCOPES: scope.join(" "),
-            SCOPES_DISPLAY: scope.join(" ") || "-",
-        });
+      const html = await renderAuthorizeTemplate({
+        REQUEST_ID: requestId,
+        REQUEST_ID_DISPLAY: requestId || "-",
+        CODE: code,
+        CLIENTNAME: client.name,
+        CLIENTPICTURE: client.picture || "https://placehold.co/96x96/png",
+        CLIENT_DESCRIPTION: client.description || "No description",
+        GROUP_ID: String(groupId),
+        REDIRECT_URI: redirectUri,
+        REDIRECT_URI_DISPLAY: redirectUri || "-",
+        STATE: query.state || "",
+        STATE_DISPLAY: query.state || "-",
+        SCOPES: scope.join(" "),
+        SCOPES_DISPLAY: scope.join(" ") || "-",
+      });
 
-        return new Response(html, {
-            headers: {
-                "content-type": "text/html; charset=utf-8",
-            },
-        });
+      return new Response(html, {
+        headers: {
+          "content-type": "text/html; charset=utf-8",
+        },
+      });
     },
     {
-        query: oauthAuthorizeQuerySchema,
-        response: {
-            400: oauthAuthorizeErrorSchema,
-            200: withDoc(t.String(), {
-                description: "Authorization page HTML.",
-                content: {
-                    "text/html": {
-                        schema: {
-                            type: "string",
-                        },
-                    },
-                },
-                headers: {
-                    "content-type": t.String({ minLength: 1 }),
-                },
-            }),
-        },
+      query: authorize.oauthAuthorizeQuerySchema,
+      response: {
+        400: authorize.oauthAuthorizeErrorSchema,
+        200: withDoc(t.String(), {
+          description: "Authorization page HTML.",
+          content: {
+            "text/html": {
+              schema: {
+                type: "string",
+              },
+            },
+          },
+          headers: {
+            "content-type": t.String({ minLength: 1 }),
+          },
+        }),
+      },
     },
-);
+  );
