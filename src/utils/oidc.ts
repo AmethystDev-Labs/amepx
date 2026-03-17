@@ -59,6 +59,16 @@ function normalizeIssuer(value: string): string | null {
     }
 }
 
+export function resolveUserAvatar(params: { userId: string; avatar?: string }): string {
+    const avatar = params.avatar?.trim();
+    if (avatar) {
+        return avatar;
+    }
+
+    const sub = String(params.userId).trim();
+    return `http://q.qlogo.cn/headimg_dl?dst_uin=${encodeURIComponent(sub)}&spec=640&img_type=jpg`;
+}
+
 function buildOidcKeyMaterial(
     privateKey: KeyObject,
     publicKey: KeyObject,
@@ -119,15 +129,10 @@ function getOidcSigningKeyMaterial(): OidcSigningKeyMaterial {
     return signingKeyMaterialCache;
 }
 
-export function resolveIssuer(request: Request): string {
+export function resolveIssuer(_request: Request): string {
     const configured = normalizeIssuer(process.env.OAUTH_ISSUER ?? "");
     if (configured) {
         return configured;
-    }
-
-    const requestIssuer = normalizeIssuer(new URL(request.url).origin);
-    if (requestIssuer) {
-        return requestIssuer;
     }
 
     return DEFAULT_OAUTH_ISSUER;
@@ -156,6 +161,10 @@ export function buildStandardUserClaims(params: {
     avatar?: string;
 }): Record<string, unknown> {
     const sub = String(params.userId);
+    const resolvedAvatar = resolveUserAvatar({
+        userId: params.userId,
+        avatar: params.avatar,
+    });
     const claims: Record<string, unknown> = {
         id: `qq_${sub}`,
         sub,
@@ -166,9 +175,7 @@ export function buildStandardUserClaims(params: {
         claims.name = displayName;
         claims.nickname = params.nickname?.trim() || displayName;
         claims.preferred_username = displayName;
-        if (params.avatar?.trim()) {
-            claims.picture = params.avatar.trim();
-        }
+        claims.picture = resolvedAvatar;
         claims.updated_at = Math.floor(Date.now() / 1000);
     }
 

@@ -7,7 +7,7 @@ import {
     userInfoResponseSchema,
 } from "../../models/router/user/info.js";
 import { hashTokenValue } from "../../utils/oauth.js";
-import { buildStandardUserClaims } from "../../utils/oidc.js";
+import { buildStandardUserClaims, resolveUserAvatar } from "../../utils/oidc.js";
 
 function extractBearerToken(authorization: string): string | null {
     const match = authorization.match(/^Bearer\s+(.+)$/i);
@@ -74,6 +74,10 @@ export const userInfoRouter = new Elysia({ prefix: "/user" }).get(
             card: tokenDoc.card,
             avatar: tokenDoc.avatar,
         });
+        const resolvedAvatar = resolveUserAvatar({
+            userId: tokenDoc.userId,
+            avatar: tokenDoc.avatar,
+        });
 
         return {
             ...oidcClaims,
@@ -83,8 +87,8 @@ export const userInfoRouter = new Elysia({ prefix: "/user" }).get(
             group_id: tokenDoc.groupId,
             nickname: tokenDoc.nickname,
             card: tokenDoc.card,
-            avatar: tokenDoc.avatar,
-            picture: tokenDoc.avatar,
+            avatar: resolvedAvatar,
+            picture: resolvedAvatar,
             scope: tokenDoc.scope,
         };
     },
