@@ -7,7 +7,7 @@ import {
   userInfoResponseSchema,
 } from "../../models/router/user/info.js";
 import { hashTokenValue } from "../../utils/oauth.js";
-import { buildStandardUserClaims } from "../../utils/oidc.js";
+import { buildStandardUserClaims, resolveUserAvatar } from "../../utils/oidc.js";
 
 function extractBearerToken(authorization: string): string | null {
   const match = authorization.match(/^Bearer\s+(.+)$/i);
@@ -67,32 +67,38 @@ export const userInfoRouter = new Elysia({ prefix: "/user" }).get(
       return userInfoError(set, 401, "invalid_token", "Access token expired");
     }
 
-    const oidcClaims = buildStandardUserClaims({
-      userId: tokenDoc.userId,
-      scope: tokenDoc.scope,
-      nickname: tokenDoc.nickname,
-      card: tokenDoc.card,
-      avatar: tokenDoc.avatar,
-    });
 
-    return {
-      ...oidcClaims,
-      id: `qq_${tokenDoc.userId}`,
-      sub: tokenDoc.userId,
-      client_id: tokenDoc.clientId,
-      group_id: tokenDoc.groupId,
-      nickname: tokenDoc.nickname,
-      card: tokenDoc.card,
-      avatar: tokenDoc.avatar,
-      picture: tokenDoc.avatar,
-      scope: tokenDoc.scope,
-    };
-  },
-  {
-    headers: userInfoHeadersSchema,
-    response: {
-      200: userInfoResponseSchema,
-      401: userInfoErrorSchema,
+        const oidcClaims = buildStandardUserClaims({
+            userId: tokenDoc.userId,
+            scope: tokenDoc.scope,
+            nickname: tokenDoc.nickname,
+            card: tokenDoc.card,
+            avatar: tokenDoc.avatar,
+        });
+        const resolvedAvatar = resolveUserAvatar({
+            userId: tokenDoc.userId,
+            avatar: tokenDoc.avatar,
+        });
+
+        return {
+            ...oidcClaims,
+            id: `qq_${tokenDoc.userId}`,
+            sub: tokenDoc.userId,
+            client_id: tokenDoc.clientId,
+            group_id: tokenDoc.groupId,
+            nickname: tokenDoc.nickname,
+            card: tokenDoc.card,
+            avatar: resolvedAvatar,
+            picture: resolvedAvatar,
+            scope: tokenDoc.scope,
+        };
+    },
+    {
+        headers: userInfoHeadersSchema,
+        response: {
+            200: userInfoResponseSchema,
+            401: userInfoErrorSchema,
+        },
     },
   },
 );
